@@ -3,14 +3,14 @@
 
 #include <QMainWindow>
 #include <QModelIndex>
-#include <QSettings>
 #include <QTreeView>
 #include <QLabel>
 #include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 
-#include "qsettingsmodel.h"
+#include <xmltreemodel.h>
+
 
 class XMLSettingsEditorWrapper : public QWidget
 {
@@ -29,8 +29,10 @@ class ModelPipe : public QObject
 {
     Q_OBJECT
 public:
-    explicit ModelPipe(QObject *parent) : QObject(parent){}
+    ModelPipe(XmlTreeModel * model,QObject *parent);
     virtual ~ModelPipe() {}
+private:
+    XmlTreeModel * model;
 public slots:
     void optionSelected(QModelIndex);
 signals:

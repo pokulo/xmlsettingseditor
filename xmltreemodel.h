@@ -67,7 +67,7 @@ public:
     int columnCount(const QModelIndex &parent = QModelIndex()) const;
 
     //methodes handling all XML structured data
-    QString description(const QModelIndex) const;
+    QString description(const QModelIndex parent) const;
 
 private:
     TreeItem * root;

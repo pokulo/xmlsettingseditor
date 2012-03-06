@@ -7,13 +7,16 @@ XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par
     device.open(QIODevice::ReadOnly);
     QXmlStreamReader xmlReader(&device);
 
+    while (!xmlReader.atEnd() && !xmlReader.hasError() && (xmlReader.name().toString() == "" || xmlReader.isWhitespace())){
+        xmlReader.readNext();
+    }
+
     if (!xmlReader.atEnd()){
 
         if (!xmlReader.hasError()) {
             TreeItem * parent;
 
             //cathing <config>-Tag (or any other first tag) as root item
-            xmlReader.readNext();
             root = new TreeItem(xmlReader.name().toString(),0);
             parent = root;
 
@@ -57,10 +60,7 @@ XmlTreeModel::~XmlTreeModel(){
 
 int XmlTreeModel::columnCount(const QModelIndex &parent) const
 {
-    if (parent.isValid())
         return 1;
-    else
-        return 0;
 }
 
 QVariant XmlTreeModel::data(const QModelIndex &index, int role) const
@@ -87,9 +87,9 @@ Qt::ItemFlags XmlTreeModel::flags(const QModelIndex &index) const
 QVariant XmlTreeModel::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
-        return root->name();
-
-    return QVariant();
+        return QVariant(root->name());
+    else
+        return QVariant();
 }
 
 QModelIndex XmlTreeModel::index(int row, int column, const QModelIndex &parent) const
@@ -137,4 +137,12 @@ int XmlTreeModel::rowCount(const QModelIndex &parent) const
         parentItem = static_cast<TreeItem*>(parent.internalPointer());
 
     return parentItem->childCount();
+}
+
+QString XmlTreeModel::description(const QModelIndex parent) const
+{
+    if (!parent.isValid())
+        return "";
+
+    return static_cast<TreeItem*>(parent.internalPointer())->description();
 }
