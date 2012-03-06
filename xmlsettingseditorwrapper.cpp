@@ -1,11 +1,13 @@
 #include "xmlsettingseditorwrapper.h"
-#include "ui_xmlsettingseditorwrapper.h"
+
+#include "xmltreemodel.h"
+
 #include <QDebug>
-#include "qsettingsmodel.h"
 #include <QXmlStreamReader>
 #include <QXmlStreamWriter>
 #include <QStringList>
 #include <QSettings>
+#include <QFile>
 
 
 bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map)
@@ -22,7 +24,7 @@ bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map)
 
             // if there are attributes in the token
             if (!xmlReader.attributes().isEmpty()){
-                QString key,key2;
+                QString key,key2 = "";
 
                 for(int i = 0; i < elements.size(); i++) {
                     if(i != 0) key += "/";
@@ -30,7 +32,7 @@ bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map)
                 }
 
                 foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
-                    if (!QString::compare(elem.name().toString(),"name")){
+                    if (elem.name().toString().compare("name",Qt::CaseInsensitive) != 0){
                         key2 = key;
                         key2 += "/";
                         key2 +=elem.name();
@@ -52,7 +54,7 @@ bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map)
                 if(i != 0) key += "/";
                 key += elements.at(i);
             }
-            map[key] = xmlReader.text().toString();
+//            map[key] = xmlReader.text().toString();
 
         }
     }
@@ -115,22 +117,51 @@ bool writeXmlFile(QIODevice &device, const QSettings::SettingsMap &map){
 
 }
 
+void ModelPipe::optionSelected(QModelIndex index){
+    emit ModelPipe::labelChanged(index.data(Qt::EditRole).toString());
+    emit ModelPipe::decriptionChanged("fake");
+}
 
-XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QMainWindow(parent), ui(new Ui::XMLSettingsEditorWrapper)
+XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QWidget(parent)
 {
-    ui->setupUi(this);
-    ui->centralWidget->setLayout(ui->gridLayout);
 
-    bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map);
-    bool writeXmlFile(QIODevice &device, const QSettings::SettingsMap &map);
+//    bool readXmlFile(QIODevice &device, QSettings::SettingsMap &map);
+//    bool writeXmlFile(QIODevice &device, const QSettings::SettingsMap &map);
 
-    QSettings::Format XMLformat = QSettings::registerFormat("xml", readXmlFile, writeXmlFile);
+//    QSettings::Format XMLformat = QSettings::registerFormat("xml", readXmlFile, writeXmlFile);
 
-    QSettingsModel * qsm = new QSettingsModel("./../testdata/Config-Demo.xml", XMLformat);
-    ui->treeView->setModel(qsm);
+//    QSettingsModel * qsm = new QSettingsModel("./../testdata/Config-Demo.xml", XMLformat);
+
+
+    QFile file("./../testdata/Config-Demo.xml");
+    XmlTreeModel * qsm = new XmlTreeModel(file,this);
+
+    QTreeView * tree = new QTreeView(this);
+    tree->setModel(qsm);
+
+    QLabel * optionName = new QLabel("label",this);
+    QPlainTextEdit * optionDescription = new QPlainTextEdit(this);
+
+    QHBoxLayout * hbox = new QHBoxLayout(this);
+    QVBoxLayout * vbox = new QVBoxLayout(this);
+
+    hbox->addWidget(tree);
+    hbox->addLayout(vbox);
+
+    vbox->addWidget(optionName);
+    vbox->addWidget(optionDescription);
+
+    this->setLayout(hbox);
+    this->setMinimumSize(800,600);
+
+//    ModelPipe * pipe = new ModelPipe(this);
+
+//    QObject::connect(tree, SIGNAL(clicked(QModelIndex)), pipe, SLOT(optionSelected(QModelIndex)));
+//    QObject::connect(pipe, SIGNAL(labelChanged(QString)), optionName, SLOT(setText(QString)));
+//    QObject::connect(pipe, SIGNAL(decriptionChanged(QString)), optionDescription, SLOT(setPlainText(QString)));
 }
 
 XMLSettingsEditorWrapper::~XMLSettingsEditorWrapper()
 {
-    delete ui;
 }
+

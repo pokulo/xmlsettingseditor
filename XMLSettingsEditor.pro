@@ -12,9 +12,13 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         xmlsettingseditorwrapper.cpp \
-    qsettingsmodel.cpp
+    qsettingsmodel.cpp \
+    xmltreemodel.cpp \
+    treeitem.cpp
 
 HEADERS  += xmlsettingseditorwrapper.h \
-    qsettingsmodel.h
+    qsettingsmodel.h \
+    xmltreemodel.h \
+    treeitem.h
 
-FORMS    += xmlsettingseditorwrapper.ui
+FORMS    +=
