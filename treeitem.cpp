@@ -96,24 +96,24 @@ int TreeItem::row() const
     return 0;
 }
 
-QString TreeItem::description() const
-{
-    return itemDescription;
-}
-
-QMap<QString, QString> TreeItem::attributes() const
-{
-    return itemAttributes;
-}
-
 QString TreeItem::name() const
 {
     return itemName;
 }
 
+QString TreeItem::description() const
+{
+    return itemDescription;
+}
+
 void TreeItem::setDescription(QString description)
 {
     itemDescription = description;
+}
+
+QMap<QString, QString> TreeItem::attributes() const
+{
+    return itemAttributes;
 }
 
 QString TreeItem::insertAttribute(const QString &key,const QString &value)

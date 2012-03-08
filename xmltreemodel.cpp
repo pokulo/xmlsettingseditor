@@ -28,7 +28,7 @@ XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par
                     //summing attributes
                     QMap<QString,QString> *attr = new QMap<QString,QString>();
                     foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
-                        (*attr).insert(elem.value().toString(), elem.value().toString());
+                        (*attr).insert(elem.name().toString(), elem.value().toString());
                     }
                     //create the new item an append to parent
                     TreeItem * item = new TreeItem(xmlReader.name().toString(),*attr,xmlReader.text().toString(),parent);
@@ -139,10 +139,35 @@ int XmlTreeModel::rowCount(const QModelIndex &parent) const
     return parentItem->childCount();
 }
 
-QString XmlTreeModel::description(const QModelIndex parent) const
+QString XmlTreeModel::description(const QModelIndex &parent) const
 {
     if (!parent.isValid())
         return "";
+    TreeItem * item = static_cast<TreeItem*>(parent.internalPointer());
+    if(item != 0x0){
+        QString ret;
+        do {
+            ret = item->description();
+            item = item->parent();
+        }while (ret.isEmpty() && item != 0x0);
+        return ret;
+    }else{
+        return QString();
+    }
+}
 
-    return static_cast<TreeItem*>(parent.internalPointer())->description();
+QMap<QString, QString> XmlTreeModel::attributes(const QModelIndex &parent) const
+{
+    if (!parent.isValid())
+        return QMap<QString, QString>();
+
+    return static_cast<TreeItem*>(parent.internalPointer())->attributes();
+}
+
+bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key, const QString &value)
+{
+    if (!parent.isValid())
+        return false;
+
+    return (static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(key,value) != QString(""));
 }

@@ -8,37 +8,41 @@
 #include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QSplitter>
+#include <QList>
 
 #include <xmltreemodel.h>
+#include "attributwidget.h"
 
 
-class XMLSettingsEditorWrapper : public QWidget
+class XMLSettingsEditorWrapper : public QSplitter
 {
     Q_OBJECT
 
 public:
-    explicit XMLSettingsEditorWrapper(QWidget *parent = 0);
+    explicit XMLSettingsEditorWrapper(QSplitter *parent = 0);
     ~XMLSettingsEditorWrapper();
 
-};
-
-
-
-
-class ModelPipe : public QObject
-{
-    Q_OBJECT
-public:
-    ModelPipe(XmlTreeModel * model,QObject *parent);
-    virtual ~ModelPipe() {}
 private:
     XmlTreeModel * model;
+    QGridLayout * attrBox;
+    QList<AttributWidget*> * attrList;
+    int r,c;
+
+    inline void init(){
+        r = -1;
+        c = -1;
+        attrList = new QList<AttributWidget*>();
+    }
+
 public slots:
-    void optionSelected(QModelIndex);
+    void optionSelected(QModelIndex index);
+    void datumChanged(QModelIndex index,QString key,QString value);
+
 signals:
     void labelChanged(QString);
     void decriptionChanged(QString);
-};
 
+};
 
 #endif // XMLSETTINGSEDITORWRAPPER_H
