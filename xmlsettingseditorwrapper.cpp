@@ -1,6 +1,43 @@
 #include "xmlsettingseditorwrapper.h"
 
-#include <QFile>
+XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile &file, QWidget *parent) : QSplitter(parent)
+{
+    init(); //initialising members (defined in header)
+
+    //creating new data model
+    model = new XmlTreeModel(file,this);
+
+    QTreeView * tree = new QTreeView(this);//TreeView of XML donfig data
+    tree->setModel(model); //connecting custom XMLTreeModel
+
+    QWidget * vbwidg = new QWidget(this); //right-side-description/edit-widget
+    QVBoxLayout * vbox = new QVBoxLayout(vbwidg); //->vertical layouted
+
+    QLabel * optionName = new QLabel(tr("Config"),vbwidg); //view for selected item name
+    QPlainTextEdit * optionDescription = new QPlainTextEdit(tr("Please select an item in the <-TreeView!"),vbwidg); //view for selected item description
+    optionDescription->setReadOnly(true); //for now description does need to be changed (no associated functionality implemented)
+    attrBox = new QGridLayout(vbwidg); //layout to dynamically view attributes
+
+    //puting everything together
+    vbox->addWidget(optionName,1);
+    vbox->addWidget(optionDescription,7);
+    vbox->addLayout(attrBox,1);
+
+    vbwidg->setLayout(vbox);
+
+    this->addWidget(tree);
+    this->addWidget(vbwidg);
+    //arange initial dimensions
+    this->setMinimumSize(800,600);
+    this->setStretchFactor(0,1);
+    this->setStretchFactor(1,3);
+
+    //selection event in QTreeView
+    QObject::connect(tree, SIGNAL(activated(QModelIndex)), this, SLOT(optionSelected(QModelIndex))); //trigger this->show attributes on doubleClick and Enter (platform-dependant)
+    QObject::connect(tree, SIGNAL(clicked(QModelIndex)), this, SLOT(optionSelected(QModelIndex))); //trigger this->show attributes on singleClick
+    QObject::connect(this, SIGNAL(labelChanged(QString)), optionName, SLOT(setText(QString))); //write name to label view
+    QObject::connect(this, SIGNAL(decriptionChanged(QString)), optionDescription, SLOT(setPlainText(QString))); //write description to view
+}
 
 void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
     emit labelChanged(index.data(Qt::DisplayRole).toString());
@@ -28,47 +65,6 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
             }
         }
     }
-}
-
-XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QSplitter *parent) : QSplitter(parent)
-{
-    init();
-    //ToDo maybe file selection dialog or parameter for filename
-    QFile file("./../testdata/Config-Demo.xml");
-    //creating new data model
-    model = new XmlTreeModel(file,this);
-
-    QTreeView * tree = new QTreeView(this);
-    tree->setModel(model);
-
-    QWidget * vbwidg = new QWidget(this);
-    QVBoxLayout * vbox = new QVBoxLayout(vbwidg);
-
-    QLabel * optionName = new QLabel("label",vbwidg);
-    QPlainTextEdit * optionDescription = new QPlainTextEdit(vbwidg);
-    optionDescription->setReadOnly(true);
-    attrBox = new QGridLayout(vbwidg);
-
-    vbox->addWidget(optionName,1);
-    vbox->addWidget(optionDescription,7);
-    vbox->addLayout(attrBox,5);
-
-    vbwidg->setLayout(vbox);
-
-    this->setMinimumSize(800,600);
-    this->addWidget(tree);
-    this->addWidget(vbwidg);
-    this->setStretchFactor(0,1);
-    this->setStretchFactor(1,3);
-
-    //selection event in QTreeView
-    QObject::connect(tree, SIGNAL(clicked(QModelIndex)), this, SLOT(optionSelected(QModelIndex)));
-    QObject::connect(this, SIGNAL(labelChanged(QString)), optionName, SLOT(setText(QString)));
-    QObject::connect(this, SIGNAL(decriptionChanged(QString)), optionDescription, SLOT(setPlainText(QString)));
-}
-
-XMLSettingsEditorWrapper::~XMLSettingsEditorWrapper()
-{
 }
 
 void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QString value)
