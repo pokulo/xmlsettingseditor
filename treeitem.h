@@ -48,8 +48,13 @@
 class TreeItem :QObject
 {
 public:
+    struct Attribute{
+        QString key;
+        QString value;
+    };
+
     TreeItem(const QString &name, TreeItem *parent = 0);
-    TreeItem(const QString &name, const QMap<QString,QString> &attributes,const QString &description, TreeItem *parent = 0);
+    TreeItem(const QString &name, const QList<Attribute> &attributes,const QString &description, TreeItem *parent = 0);
     ~TreeItem();
 
     //standard members for AbstractItemModel
@@ -65,7 +70,7 @@ public:
     QString description() const;
     void setDescription(QString description);
 
-    QMap<QString,QString> attributes() const;
+    QList<Attribute> attributes() const;
     QString insertAttribute(const QString &key,const QString &value);
     QString removeAttribute(const QString &key);
 
@@ -73,7 +78,7 @@ private:
     QList<TreeItem*> childItems;
     QString itemName;
     TreeItem *parentItem;
-    QMap<QString,QString> itemAttributes;
+    QList<Attribute> itemAttributes;
     QString itemDescription;
 };
 

@@ -68,9 +68,11 @@ public:
 
     //methodes handling specially XML structured data
     QString description(const QModelIndex &parent) const;
-    QMap<QString,QString> attributes(const QModelIndex &parent) const;
+    QList<TreeItem::Attribute> attributes(const QModelIndex &parent) const;
     bool changeAttribute(const QModelIndex &parent, const QString &key, const QString &value);
     //to be continued (i.e. changing structure, description etc.)
+
+    bool save(QFile &device) const;
 
 private:
     TreeItem * root;

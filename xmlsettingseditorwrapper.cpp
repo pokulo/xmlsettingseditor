@@ -42,7 +42,7 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile &file, QWidget *parent)
 void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
     emit labelChanged(index.data(Qt::DisplayRole).toString());
     emit decriptionChanged(model->description(index));
-    QMap<QString,QString> attr = model->attributes(index);
+    QList<TreeItem::Attribute> attr = model->attributes(index);
     AttributWidget * a;
     while (!attrList->isEmpty()){
         a = attrList->takeFirst();
@@ -53,9 +53,10 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
     c = -1;
     if (!attr.isEmpty()){
         r++;
-        foreach(const QString &key, attr.keys()){
+        QList<TreeItem::Attribute>::const_iterator i;
+        for( i = attr.constBegin(); i != attr.constEnd(); i++){
             c++;
-            a = new AttributWidget(index, key, attr.value(key), attrBox->parentWidget());
+            a = new AttributWidget(index, (*i).key, (*i).value, attrBox->parentWidget());
             attrList->append(a);
             attrBox->addWidget(a,r,c);
             QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));

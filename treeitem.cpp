@@ -55,7 +55,7 @@ TreeItem::TreeItem(const QString &name, TreeItem *parent)
     itemDescription = "";
 }
 
-TreeItem::TreeItem(const QString &name,const QMap<QString,QString> &attributes,const QString &description, TreeItem *parent){
+TreeItem::TreeItem(const QString &name,const QList<Attribute> &attributes,const QString &description, TreeItem *parent){
     parentItem = parent;
     itemName = name;
     itemDescription = description;
@@ -111,22 +111,34 @@ void TreeItem::setDescription(QString description)
     itemDescription = description;
 }
 
-QMap<QString, QString> TreeItem::attributes() const
+QList<TreeItem::Attribute> TreeItem::attributes() const
 {
     return itemAttributes;
 }
 
 QString TreeItem::insertAttribute(const QString &key,const QString &value)
 {
-    QString ret = "";
-    if (itemAttributes.contains(key)){
-        ret = itemAttributes.value(key);
+    QString ret("");
+    if (!itemAttributes.isEmpty()){
+        QList<Attribute>::iterator i;
+        for(i = itemAttributes.begin(); (i != itemAttributes.end()) && ret.isEmpty(); i++){
+            if (key == (*i).key){
+                ret = (*i).value;
+                (*i).value = value;
+            }
+        }
+        if (ret.isEmpty()){
+            TreeItem::Attribute a;
+            a.key = key;
+            a.value = value;
+            itemAttributes.append(a);
+        }
     }
-    itemAttributes.insert(key, value);
     return ret;
 }
 
 QString TreeItem::removeAttribute(const QString &key)
 {
-    return itemAttributes.take(key);
+//    return itemAttributes.take(key);
+    return ""; //todo
 }

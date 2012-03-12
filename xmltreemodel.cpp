@@ -3,55 +3,57 @@
 
 
 XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par){
-    //for now only readonly
+    //for now readonly
     device.open(QIODevice::ReadOnly);
     QXmlStreamReader xmlReader(&device);
 
-    while (!xmlReader.atEnd() && !xmlReader.hasError() && (xmlReader.name().toString() == "" || xmlReader.isWhitespace())){
+    while (!xmlReader.atEnd() && (xmlReader.name().toString() == "" || xmlReader.isWhitespace())){
         xmlReader.readNext();
     }
 
     if (!xmlReader.atEnd()){
+        TreeItem * parent;
 
-        if (!xmlReader.hasError()) {
-            TreeItem * parent;
+        //cathing <config>-Tag (or any other first tag) as root item
+        root = new TreeItem(xmlReader.name().toString(),0);
+        parent = root;
 
-            //cathing <config>-Tag (or any other first tag) as root item
-            root = new TreeItem(xmlReader.name().toString(),0);
-            parent = root;
+        while (!xmlReader.atEnd()) {
+            xmlReader.readNext();
 
-            while (!xmlReader.atEnd() && !xmlReader.hasError()) {
-                xmlReader.readNext();
-
-                //create a new childItem for every start tag
-                if (xmlReader.isStartElement()) {
-                    //summing attributes
-                    QMap<QString,QString> *attr = new QMap<QString,QString>();
-                    foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
-                        (*attr).insert(elem.name().toString(), elem.value().toString());
-                    }
-                    //create the new item an append to parent
-                    TreeItem * item = new TreeItem(xmlReader.name().toString(),*attr,xmlReader.text().toString(),parent);
-                    parent->appendChild(item);
-
-                    //step up in the tree
-                    parent = item;
-
-                } else if (xmlReader.isEndElement()) {
-                    //step down from the tree
-                    parent = parent->parent();
-
-                 // if token contains text content set it as parents description
-                } else if (xmlReader.isCharacters() && !xmlReader.isWhitespace()) {
-                    parent->setDescription(xmlReader.text().toString());
+            //create a new childItem for every start tag
+            if (xmlReader.isStartElement()) {
+                //summing attributes
+                QList<TreeItem::Attribute> *attr = new QList<TreeItem::Attribute>();
+                foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
+                    TreeItem::Attribute a;
+                    a.key = elem.name().toString();
+                    a.value = elem.value().toString();
+                    (*attr).append(a);
                 }
+                //create the new item an append to parent
+                TreeItem * item = new TreeItem(xmlReader.name().toString(),*attr,xmlReader.text().toString(),parent);
+                parent->appendChild(item);
+
+                //step up in the tree
+                parent = item;
+
+            } else if (xmlReader.isEndElement()) {
+                //step down from the tree
+                parent = parent->parent();
+
+             // if token contains text content set it as parents description
+            } else if (xmlReader.isCharacters() && !xmlReader.isWhitespace()) {
+                parent->setDescription(xmlReader.text().toString());
             }
         }
-        // warning on error
-        if (xmlReader.hasError()) {
-            qWarning() << xmlReader.errorString();
-        }
     }
+    // warning on error
+    if (xmlReader.hasError()) {
+        qWarning() << xmlReader.errorString();
+    }
+    xmlReader.clear();
+    device.close();
 }
 
 XmlTreeModel::~XmlTreeModel(){
@@ -156,10 +158,10 @@ QString XmlTreeModel::description(const QModelIndex &parent) const
     }
 }
 
-QMap<QString, QString> XmlTreeModel::attributes(const QModelIndex &parent) const
+QList<TreeItem::Attribute> XmlTreeModel::attributes(const QModelIndex &parent) const
 {
     if (!parent.isValid())
-        return QMap<QString, QString>();
+        return QList<TreeItem::Attribute>();
 
     return static_cast<TreeItem*>(parent.internalPointer())->attributes();
 }
@@ -169,5 +171,14 @@ bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key
     if (!parent.isValid())
         return false;
 
-    return (static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(key,value) != QString(""));
+    return (!static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(key,value).isEmpty());
+}
+
+bool XmlTreeModel::save(QFile &device) const
+{
+    device.open(QIODevice::ReadWrite);
+    QXmlStreamWriter xmlWriter(&device);
+
+
+
 }
