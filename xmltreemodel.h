@@ -72,10 +72,11 @@ public:
     bool changeAttribute(const QModelIndex &parent, const QString &key, const QString &value);
     //to be continued (i.e. changing structure, description etc.)
 
-    bool save(QFile &device) const;
+    bool save(QFile &device); //save modifications to specified file
 
 private:
     TreeItem * root;
+    void recurse(QXmlStreamWriter &xmlWriter, TreeItem * item); //recursively write item tree to xml stream (used in save())
 
 };
 

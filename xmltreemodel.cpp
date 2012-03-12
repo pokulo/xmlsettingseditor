@@ -174,11 +174,40 @@ bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key
     return (!static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(key,value).isEmpty());
 }
 
-bool XmlTreeModel::save(QFile &device) const
+bool XmlTreeModel::save(QFile &device)
 {
     device.open(QIODevice::ReadWrite);
     QXmlStreamWriter xmlWriter(&device);
 
+    xmlWriter.setAutoFormatting(true);
+    xmlWriter.setAutoFormattingIndent(true);
 
+    xmlWriter.writeStartDocument();
 
+        TreeItem * item = root;
+        recurse(xmlWriter,item);
+
+    xmlWriter.writeEndDocument();
+    xmlWriter.~QXmlStreamWriter();
+    device.close();
+
+    return true;
+}
+
+void XmlTreeModel::recurse(QXmlStreamWriter &xmlWriter, TreeItem *item)
+{
+    QList<TreeItem::Attribute>::iterator i;
+
+    xmlWriter.writeStartElement(item->name());
+   QList<TreeItem::Attribute> att = item->attributes();
+   for (i = att.begin(); i != att.end(); i++){
+       xmlWriter.writeAttribute((*i).key,(*i).value);
+   }
+   if(!item->description().isEmpty()){
+       xmlWriter.writeCharacters(item->description());
+   }
+   for (int j = 0; j < item->childCount(); j++){
+       recurse(xmlWriter,item->child(j));
+   }
+   xmlWriter.writeEndElement();
 }

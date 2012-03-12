@@ -1,11 +1,12 @@
 #include "xmlsettingseditorwrapper.h"
 
-XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile &file, QWidget *parent) : QSplitter(parent)
+XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile * file, QWidget *parent) : QSplitter(parent)
 {
     init(); //initialising members (defined in header)
+    sourceFile = file;
 
     //creating new data model
-    model = new XmlTreeModel(file,this);
+    model = new XmlTreeModel(*sourceFile,this);
 
     QTreeView * tree = new QTreeView(this);//TreeView of XML donfig data
     tree->setModel(model); //connecting custom XMLTreeModel
@@ -18,10 +19,15 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile &file, QWidget *parent)
     optionDescription->setReadOnly(true); //for now description does need to be changed (no associated functionality implemented)
     attrBox = new QGridLayout(vbwidg); //layout to dynamically view attributes
 
+    QPushButton * saveButton = new QPushButton(tr("save"),vbwidg);
+    QObject::connect(saveButton,SIGNAL(clicked()),this,SLOT(saveChanges()));
+
+
     //puting everything together
     vbox->addWidget(optionName,1);
     vbox->addWidget(optionDescription,7);
     vbox->addLayout(attrBox,1);
+    vbox->addWidget(saveButton,1);
 
     vbwidg->setLayout(vbox);
 
@@ -39,7 +45,7 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QFile &file, QWidget *parent)
     QObject::connect(this, SIGNAL(decriptionChanged(QString)), optionDescription, SLOT(setPlainText(QString))); //write description to view
 }
 
-void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
+void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
     emit labelChanged(index.data(Qt::DisplayRole).toString());
     emit decriptionChanged(model->description(index));
     QList<TreeItem::Attribute> attr = model->attributes(index);
@@ -70,5 +76,11 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){
 
 void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QString value)
 {
-   model->changeAttribute(index,key,value);
+    model->changeAttribute(index,key,value);
+}
+
+void XMLSettingsEditorWrapper::saveChanges() //SLOT
+{
+    sourceFile->setFileName(sourceFile->fileName().append(".txt"));
+    model->save(*sourceFile);
 }

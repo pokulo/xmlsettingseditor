@@ -11,6 +11,7 @@
 #include <QSplitter>
 #include <QList>
 #include <QFile>
+#include <QPushButton>
 
 #include <xmltreemodel.h>
 #include "attributwidget.h"
@@ -21,10 +22,11 @@ class XMLSettingsEditorWrapper : public QSplitter
     Q_OBJECT
 
 public:
-    explicit XMLSettingsEditorWrapper(QFile &file, QWidget *parent = 0);
+    explicit XMLSettingsEditorWrapper(QFile * file, QWidget *parent = 0);
     inline ~XMLSettingsEditorWrapper(){}
 
 private:
+    QFile  * sourceFile;
     XmlTreeModel * model; //Datamodel containing whole xml data tree
     QGridLayout * attrBox; //Layout management for AttributeWigdets
     QList<AttributWidget*> * attrList; //separate storing for widget pointer to delete/close them later
@@ -39,6 +41,7 @@ private:
 public slots:
     void optionSelected(QModelIndex index); //slot for connection from TreeView->(itemSelected) to detailed view
     void datumChanged(QModelIndex index,QString key,QString value); //slot for conntection from attribute edit->(textChanged) to Model (save changes)
+    void saveChanges();
 
 signals:
     void labelChanged(QString); //indicating newly selected TreeItem->name() chould be displayed

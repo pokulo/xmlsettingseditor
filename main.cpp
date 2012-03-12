@@ -1,14 +1,15 @@
 #include <QtGui/QApplication>
 #include "xmlsettingseditorwrapper.h"
+#include <QFileDialog>
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
     //ToDo maybe file selection dialog or parameter for filename
-    QFile file("./../testdata/Config-Demo.xml");
+    QFile file(QFileDialog::getOpenFileName(0,"Open XML file"));
 
-    XMLSettingsEditorWrapper * w = new XMLSettingsEditorWrapper(file,0);
+    XMLSettingsEditorWrapper * w = new XMLSettingsEditorWrapper(&file,0);
     w->show();
 
     return a.exec();
