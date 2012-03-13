@@ -74,9 +74,12 @@ public:
 
     bool save(QFile &device); //save modifications to specified file
 
+    QList<QModelIndex> findItems(const QString &searchString) const;//providing fast selection in tree view
+
 private:
     TreeItem * root;
-    void recurse(QXmlStreamWriter &xmlWriter, TreeItem * item); //recursively write item tree to xml stream (used in save())
+    void recursiveWriting(QXmlStreamWriter &xmlWriter, TreeItem * item); //recursively write item tree to xml stream (used in save())
+    void recursiveSearch(QList<QModelIndex> * list, int row, TreeItem * item, const QString &searchString) const ;//recursively search through tree for fast select (findItem())
 
 };
 

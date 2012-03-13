@@ -48,7 +48,7 @@
 class TreeItem :QObject
 {
 public:
-    struct Attribute{
+    struct Attribute{ //custom struct to store Attribute key-value-pairs in original order
         QString key;
         QString value;
     };
@@ -68,17 +68,16 @@ public:
     QString name() const;
 
     QString description() const;
-    void setDescription(QString description);
+    void setDescription(QString description);//only one description string can be set per item
 
-    QList<Attribute> attributes() const;
-    QString insertAttribute(const QString &key,const QString &value);
-    QString removeAttribute(const QString &key);
+    QList<Attribute> attributes() const; //returns itemAtributes
+    QString insertAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
 
 private:
     QList<TreeItem*> childItems;
     QString itemName;
     TreeItem *parentItem;
-    QList<Attribute> itemAttributes;
+    QList<Attribute> itemAttributes; //QList of custom struct TreeItem::Attribute
     QString itemDescription;
 };
 

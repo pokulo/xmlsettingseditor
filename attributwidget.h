@@ -21,10 +21,10 @@ private:
     QLineEdit * valueWidget;
 
 signals:
-    void attributeChanged(QModelIndex,QString,QString);
+    void attributeChanged(QModelIndex,QString,QString);//indicating changed text of LineEdit -> model
 
 public slots:
-    void valueChanged(QString value);
+    void valueChanged(QString value);//slot for LineEdit indicating changed text
 
 };
 

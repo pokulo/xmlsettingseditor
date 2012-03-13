@@ -14,7 +14,7 @@ AttributWidget::AttributWidget(QModelIndex index, const QString &label,const QSt
 
 }
 
-void AttributWidget::valueChanged(QString value)
+void AttributWidget::valueChanged(QString value)//SLOT
 {
     emit attributeChanged(modelIndex, labelWidget->text(), value);
 }

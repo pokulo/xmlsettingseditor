@@ -1,5 +1,6 @@
 #include "xmltreemodel.h"
 #include <QDebug>
+#include <QTextCodec>
 
 
 XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par){
@@ -121,7 +122,7 @@ QModelIndex XmlTreeModel::parent(const QModelIndex &index) const
     TreeItem *childItem = static_cast<TreeItem*>(index.internalPointer());
     TreeItem *parentItem = childItem->parent();
 
-    if (parentItem == root)
+    if (childItem == root)
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);
@@ -179,35 +180,62 @@ bool XmlTreeModel::save(QFile &device)
     device.open(QIODevice::ReadWrite);
     QXmlStreamWriter xmlWriter(&device);
 
-    xmlWriter.setAutoFormatting(true);
-    xmlWriter.setAutoFormattingIndent(true);
+    xmlWriter.setAutoFormatting(true);//adds line breaks
+    xmlWriter.setAutoFormattingIndent(true);//<tag /> have bad indentation anyway
+//    xmlWriter.setCodec(); //should be automatically UTF-8 from header
 
     xmlWriter.writeStartDocument();
 
         TreeItem * item = root;
-        recurse(xmlWriter,item);
+        recursiveWriting(xmlWriter,item);//recurse through model tree
 
     xmlWriter.writeEndDocument();
-    xmlWriter.~QXmlStreamWriter();
+    xmlWriter.~QXmlStreamWriter();//to fully write buffer
     device.close();
 
     return true;
 }
 
-void XmlTreeModel::recurse(QXmlStreamWriter &xmlWriter, TreeItem *item)
+void XmlTreeModel::recursiveWriting(QXmlStreamWriter &xmlWriter, TreeItem *item)
 {
-    QList<TreeItem::Attribute>::iterator i;
+   QList<TreeItem::Attribute>::iterator i;
 
-    xmlWriter.writeStartElement(item->name());
+   //NAME (parent)
+   xmlWriter.writeStartElement(item->name());
+
+   //ATTRIBUTES
    QList<TreeItem::Attribute> att = item->attributes();
    for (i = att.begin(); i != att.end(); i++){
        xmlWriter.writeAttribute((*i).key,(*i).value);
    }
+   //DESCRIPTION as first child characters
    if(!item->description().isEmpty()){
        xmlWriter.writeCharacters(item->description());
    }
+   //recurse to children
    for (int j = 0; j < item->childCount(); j++){
-       recurse(xmlWriter,item->child(j));
+       recursiveWriting(xmlWriter,item->child(j));
    }
+   //close parent
    xmlWriter.writeEndElement();
 }
+
+QList<QModelIndex> XmlTreeModel::findItems(const QString &searchString) const
+{
+    QList<QModelIndex> list;
+    if (!searchString.isEmpty())
+        recursiveSearch(&list, 0, root, searchString);//recurse through tree
+    return list;
+}
+
+void XmlTreeModel::recursiveSearch(QList<QModelIndex> *list, int row, TreeItem *item, const QString &searchString) const
+{
+    if (item->name().contains(searchString,Qt::CaseInsensitive) || item->description().contains(searchString,Qt::CaseInsensitive)){
+        //append item to results if name or description contain the searchString
+        list->append(createIndex(row,0,item));
+    }
+    for(int i = 0; i < item->childCount(); i++){//recurse to children
+        recursiveSearch(list,i,item->child(i),searchString);
+    }
+}
+

@@ -69,7 +69,7 @@ TreeItem::~TreeItem()
 
 void TreeItem::appendChild(TreeItem *item)
 {
-    Q_ASSERT(item);
+    Q_ASSERT(item);//debug only
     childItems.append(item);
 }
 
@@ -90,7 +90,7 @@ TreeItem *TreeItem::parent()
 
 int TreeItem::row() const
 {
-    if (parentItem)
+    if (parentItem)//because parent of root is 0x0
         return parentItem->childItems.indexOf(const_cast<TreeItem*>(this));
 
     return 0;
@@ -120,25 +120,24 @@ QString TreeItem::insertAttribute(const QString &key,const QString &value)
 {
     QString ret("");
     if (!itemAttributes.isEmpty()){
+
+        //test if attribute exists -> replace value
         QList<Attribute>::iterator i;
         for(i = itemAttributes.begin(); (i != itemAttributes.end()) && ret.isEmpty(); i++){
-            if (key == (*i).key){
-                ret = (*i).value;
-                (*i).value = value;
+            if (key == (*i).key){//found attribute
+                ret = (*i).value; //store old value
+                (*i).value = value; //overwrite with new
             }
         }
+
+        //if attribute hasn't exist append a new one
         if (ret.isEmpty()){
             TreeItem::Attribute a;
             a.key = key;
             a.value = value;
             itemAttributes.append(a);
         }
-    }
-    return ret;
-}
 
-QString TreeItem::removeAttribute(const QString &key)
-{
-//    return itemAttributes.take(key);
-    return ""; //todo
+    }
+    return ret;//return the old value (empty if attribute hasn't exist)
 }
