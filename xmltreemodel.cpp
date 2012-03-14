@@ -2,59 +2,63 @@
 #include <QDebug>
 #include <QTextCodec>
 
-
 XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par){
     //for now readonly
-    device.open(QIODevice::ReadOnly);
-    QXmlStreamReader xmlReader(&device);
+    init();
 
-    while (!xmlReader.atEnd() && (xmlReader.name().toString() == "" || xmlReader.isWhitespace())){
-        xmlReader.readNext();
-    }
+    if (device.open(QIODevice::ReadOnly)){
+        QXmlStreamReader xmlReader(&device);
 
-    if (!xmlReader.atEnd()){
-        TreeItem * parent;
-
-        //cathing <config>-Tag (or any other first tag) as root item
-        root = new TreeItem(xmlReader.name().toString(),0);
-        parent = root;
-
-        while (!xmlReader.atEnd()) {
+        while (!xmlReader.atEnd() && (xmlReader.name().toString() == "" || xmlReader.isWhitespace())){
             xmlReader.readNext();
+        }
 
-            //create a new childItem for every start tag
-            if (xmlReader.isStartElement()) {
-                //summing attributes
-                QList<TreeItem::Attribute> *attr = new QList<TreeItem::Attribute>();
-                foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
-                    TreeItem::Attribute a;
-                    a.key = elem.name().toString();
-                    a.value = elem.value().toString();
-                    (*attr).append(a);
+        if (!xmlReader.atEnd()){
+            TreeItem * parent;
+
+            //cathing <config>-Tag (or any other first tag) as root item
+            root = new TreeItem(xmlReader.name().toString(),0);
+            parent = root;
+
+            while (!xmlReader.atEnd()) {
+                xmlReader.readNext();
+
+                //create a new childItem for every start tag
+                if (xmlReader.isStartElement()) {
+                    //summing attributes
+                    QList<TreeItem::Attribute> *attr = new QList<TreeItem::Attribute>();
+                    foreach(QXmlStreamAttribute elem, xmlReader.attributes()){
+                        TreeItem::Attribute a;
+                        a.key = elem.name().toString();
+                        a.value = elem.value().toString();
+                        (*attr).append(a);
+                    }
+                    //create the new item an append to parent
+                    TreeItem * item = new TreeItem(xmlReader.name().toString(),*attr,xmlReader.text().toString(),parent);
+                    parent->appendChild(item);
+
+                    //step up in the tree
+                    parent = item;
+
+                } else if (xmlReader.isEndElement()) {
+                    //step down from the tree
+                    parent = parent->parent();
+
+                 // if token contains text content set it as parents description
+                } else if (xmlReader.isCharacters() && !xmlReader.isWhitespace()) {
+                    parent->setDescription(xmlReader.text().toString());
                 }
-                //create the new item an append to parent
-                TreeItem * item = new TreeItem(xmlReader.name().toString(),*attr,xmlReader.text().toString(),parent);
-                parent->appendChild(item);
-
-                //step up in the tree
-                parent = item;
-
-            } else if (xmlReader.isEndElement()) {
-                //step down from the tree
-                parent = parent->parent();
-
-             // if token contains text content set it as parents description
-            } else if (xmlReader.isCharacters() && !xmlReader.isWhitespace()) {
-                parent->setDescription(xmlReader.text().toString());
             }
         }
+        // warning on error
+        if (xmlReader.hasError()) {
+            qWarning() << xmlReader.errorString();
+        }
+        xmlReader.clear();
+        device.close();
+    }else{
+        throw device.error();
     }
-    // warning on error
-    if (xmlReader.hasError()) {
-        qWarning() << xmlReader.errorString();
-    }
-    xmlReader.clear();
-    device.close();
 }
 
 XmlTreeModel::~XmlTreeModel(){

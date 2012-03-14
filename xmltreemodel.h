@@ -81,6 +81,9 @@ private:
     void recursiveWriting(QXmlStreamWriter &xmlWriter, TreeItem * item); //recursively write item tree to xml stream (used in save())
     void recursiveSearch(QList<QModelIndex> * list, int row, TreeItem * item, const QString &searchString) const ;//recursively search through tree for fast select (findItem())
 
+    inline void init(){
+        root = 0;
+    }
 };
 
 #endif // XMLTREEMODEL_H
