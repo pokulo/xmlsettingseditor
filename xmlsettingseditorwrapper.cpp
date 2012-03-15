@@ -66,9 +66,10 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(
         titleHL->addWidget(resetButton,1);
 
         rightVL->addLayout(titleHL,1);
-        rightVL->addWidget(optionDescription,2);//middle description
-        rightVL->addSpacerItem(new QSpacerItem(1,1,QSizePolicy::Maximum,QSizePolicy::Maximum));
-        rightVL->addLayout(attrBox,1);//middle attributes
+        rightVL->addWidget(optionDescription,3);//middle description
+//        rightVL->setStretchFactor(optionDescription,3);
+        rightVL->addLayout(attrBox,3);//middle attributes
+        rightVL->setAlignment(attrBox,Qt::AlignTop);
 
         rightVB->setLayout(rightVL);
     //right side
