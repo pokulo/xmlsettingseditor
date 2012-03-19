@@ -67,6 +67,9 @@ public:
 
     QString name() const;
 
+    void insertChild(int index, const QString &key);
+    void removeChild(int index);
+
     QString description() const;
     void setDescription(QString description);//only one description string can be set per item
 

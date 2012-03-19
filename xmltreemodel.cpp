@@ -75,15 +75,10 @@ int XmlTreeModel::columnCount(const QModelIndex &parent) const
 
 QVariant XmlTreeModel::data(const QModelIndex &index, int role) const
 {
-    if (!index.isValid())
+    if (!index.isValid() || role != Qt::DisplayRole)
         return QVariant();
 
-    if (role != Qt::DisplayRole)
-        return QVariant();
-
-    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
-
-    return QVariant(item->name());
+    return QVariant(static_cast<TreeItem*>(index.internalPointer())->name());
 }
 
 Qt::ItemFlags XmlTreeModel::flags(const QModelIndex &index) const

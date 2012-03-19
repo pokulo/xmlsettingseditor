@@ -1,11 +1,12 @@
 #include "attributwidget.h"
 
-AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const QString &value, QWidget *parent, int attributeIndex) : QWidget(parent){
+AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const QString &value, QWidget *parent, int attributeIndex, int attributeTagIndex,bool hasValue) : QWidget(parent){
 
     this->setAttribute(Qt::WA_DeleteOnClose);
     modelIndex = index;
     labelWidget = new QPushButton(label,this);
-    static_cast<QPushButton*>(labelWidget)->setCheckable(true);
+    labelWidget->setMinimumWidth(30);
+    labelWidget->setCheckable(true);
     if (attributeIndex != 0){
         labelWidget->setChecked(true);
     }else{
@@ -13,14 +14,24 @@ AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const Q
         labelWidget->setFlat(true);
     }
 
-    valueWidget = new QLineEdit(value,this);
     QHBoxLayout * layout = new QHBoxLayout(this);
     layout->addWidget(labelWidget);
-    layout->addWidget(valueWidget);
-    this->setLayout(layout);
-    QObject::connect(valueWidget,SIGNAL(textEdited(QString)),this,SLOT(valueChanged(QString)));
     QObject::connect(labelWidget,SIGNAL(clicked(bool)),this,SLOT(attributeToggled(bool)));
+
+
+    if (hasValue){
+        valueWidget = new QLineEdit(value,this);
+        valueWidget->setMinimumWidth(50);
+        layout->addWidget(valueWidget);
+        QObject::connect(valueWidget,SIGNAL(textEdited(QString)),this,SLOT(valueChanged(QString)));
+    }else{
+        valueWidget = 0;
+    }
+
+    this->setLayout(layout);
+
     this->attributeIndex = attributeIndex;
+    this->attributeTagIndex = attributeTagIndex;
 }
 
 void AttributeWidget::valueChanged(QString value)//SLOT
@@ -30,27 +41,37 @@ void AttributeWidget::valueChanged(QString value)//SLOT
 
 void AttributeWidget::setDisabled(bool disabled)
 {
-    valueWidget->setDisabled(disabled);
+    if (valueWidget)
+        valueWidget->setDisabled(disabled);
     labelWidget->setChecked(false);
 }
 
 void AttributeWidget::attributeToggled(bool checked)
 {
-    valueWidget->setEnabled(checked);
+    if (valueWidget)
+        valueWidget->setEnabled(checked);
     if (checked){
         emit activateAttribute(modelIndex,attributeIndex);
+        emit activateTagAttribute(modelIndex,attributeTagIndex);
     }else{
         emit deactivateAttribute(modelIndex,attributeIndex, this);
+        emit deactivateTagAttribute(modelIndex,attributeTagIndex, this);
     }
 }
 
-void AttributeWidget::setValue(QString value)
+void AttributeWidget::setValue(QString value)//SLOT
 {
-    valueWidget->setText(value);
+    if (valueWidget)
+        valueWidget->setText(value);
 }
 
 bool AttributeWidget::isEnabled()
 {
-    return valueWidget->isEnabled();
+    return labelWidget->isChecked();
+}
+
+QString AttributeWidget::label()
+{
+    return labelWidget->text();
 }
 

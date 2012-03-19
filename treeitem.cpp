@@ -73,6 +73,24 @@ void TreeItem::appendChild(TreeItem *item)
     childItems.append(item);
 }
 
+void TreeItem::insertChild(int index, const QString &key){
+    TreeItem * a = new TreeItem(key,this);
+    if (index > 0){
+        int i = 1;
+        int j = 1;
+        while (i < childItems.count() && j < index){
+            while (!childItems.value(i)->name().contains(QString::number(j)) && j < index){
+                j++;
+            }
+            if (j != index)
+                i++;
+        }
+        childItems.insert(i,a);
+    }else{
+        childItems.insert(index,a);
+    }
+}
+
 TreeItem *TreeItem::child(int row)
 {
     return childItems.value(row);
@@ -180,5 +198,19 @@ void TreeItem::removeAttribute(int index)
             itemAttributes.removeAt(i);
     }else{
         itemAttributes.removeAt(index);
+    }
+}
+
+void TreeItem::removeChild(int index)
+{
+    if (index > 0){//only
+        int i = 0;
+        while (!childItems.value(i)->name().contains(QString::number(index)) && i < childItems.count()){
+            i++;
+        }
+        if (i <= childItems.count())
+            childItems.removeAt(i);
+    }else{
+        childItems.removeAt(index);
     }
 }

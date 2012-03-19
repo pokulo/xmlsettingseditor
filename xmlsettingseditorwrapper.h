@@ -36,6 +36,7 @@ private:
     QGridLayout * attrBox; //Layout management for AttributeWigdets
     QList<AttributeWidget*> * attrList; //separate storing for widget pointer to delete/close them later
     int r,c; //r : rowCount of attrBox / c : colCount of last row of attrBox (managing layout if AttributeWidgets
+    QList<TreeItem::Attribute> allAttrList;
 
     QPushButton * saveButton;//trigger saveToFile action
     QPushButton * resetButton;//trigger saveToFile action
@@ -52,7 +53,7 @@ private:
         model = 0;
     }
 
-public slots:
+private slots:
     void openXMLFile();
     void openFileDialog();
 
@@ -62,6 +63,9 @@ public slots:
 
     void activateAttribute(QModelIndex index, int attributeIndex);// inserting one of a1..a6 attribute onToggle into attrBox
     void deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget);// removing one of a1..a6 attribute onToggle from attrBox
+
+    void activateAttributeTag(QModelIndex index, int attributeIndex);// inserting one of a1..a6 attribute onToggle into attrBox
+    void deactivateAttributeTag(QModelIndex index, int attributeIndex, AttributeWidget * widget);// removing one of a1..a6 attribute onToggle from attrBox
 
     void datumChanged(QModelIndex index,QString key,QString value); //slot for conntection from attribute edit->(textChanged) to Model (save changes)
     void saveChanges(); //save button pressed -> save to file

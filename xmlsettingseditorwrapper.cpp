@@ -1,5 +1,7 @@
 #include "xmlsettingseditorwrapper.h"
 
+#include <QDebug>
+
 XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(parent)
 {
     init(); //initialising members (defined in header)
@@ -114,10 +116,10 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
                 int ai = 1;//attr index
                 for(int i = 1; i <= 6; i++){//generating all a1 .. a6
                     c++;
-                    if (attr.value(ai).key.contains("a") && attr.value(ai).key.contains(QString::number(i))){//ai is existing special value
+                    if (attr.value(ai).key == QString::number(i).prepend("a")){//ai is existing special value
                         a = new AttributeWidget(index, attr.value(ai).key, attr.value(ai).value, attrBox->parentWidget(), i);//create custom AttributeWidget
                         ai++;
-                    }else{//ai is not specialized (set to all-value)
+                    }else{//ai is not specified (set to all-value)
                         a = new AttributeWidget(index, QString::number(i).prepend("a"), attr.first().value, attrBox->parentWidget(), i);//create custom AttributeWidget
                         a->setDisabled(true);
                     }
@@ -149,6 +151,77 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
 
             }
         }
+
+        if(model->index(0,0,index).data() == QVariant("all")){//first child is an all-tag
+            r++;
+            QModelIndex childIndex = model->index(0,0,index);
+
+            QString childName = childIndex.data().toString();
+
+            //all
+            c++;
+            a = new AttributeWidget(childIndex, childName,QString(""), attrBox->parentWidget(),0,0,false); //all-label
+            a->setDisabled(true);
+            attrList->append(a);//save pointer in list for easy remove later
+            attrBox->addWidget(a,r,c);//add to gridLayout
+
+            //all attr
+            allAttrList = model->attributes(childIndex);
+            QList<TreeItem::Attribute>::const_iterator i;
+            for( i = allAttrList.constBegin(); i != allAttrList.constEnd(); i++){//setup all-attributes
+                c++;
+                a = new AttributeWidget(childIndex, (*i).key, (*i).value, attrBox->parentWidget());//create custom AttributeWidget
+                attrList->append(a);//save pointer in list for easy remove later
+                attrBox->addWidget(a,r,c);//add to gridLayout
+                QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));//write back change of attribute to model
+            }
+            c = -1;
+            r++;
+
+
+            //ai
+            int aai = 1;//allAttrList index
+            for(int j = 1; j <= 6; j++){
+                childIndex = model->index(aai,0,index);
+                childName = QString::number(j).prepend("a");
+
+                //ai toggle button
+                c++;
+                AttributeWidget *aib = new AttributeWidget(index, childName,QString(""), attrBox->parentWidget(), j,j,false); //all-label
+                attrList->append(aib);//save pointer in list for easy remove later
+                attrBox->addWidget(aib,r,c);//add to gridLayout
+                QObject::connect(aib,SIGNAL(activateAttribute(QModelIndex,int)),this,SLOT(activateAttributeTag(QModelIndex,int)));//write back change of attribute to model
+                QObject::connect(aib,SIGNAL(deactivateAttribute(QModelIndex,int,AttributeWidget*)),this,SLOT(deactivateAttributeTag(QModelIndex,int,AttributeWidget*)));//write back change of attribute to model
+
+                //ai attr
+                if (childName == childIndex.data()){//ai is specified
+                    aai++;
+                    attr = model->attributes(childIndex);//get a QList of attributes
+                    int ai = 0;//attr index
+                    for(int i = 0; i < allAttrList.count(); i++){//setup all-attributes
+                        c++;
+                        if (allAttrList.value(i).key == attr.value(ai).key){//ai has attr[aai]
+                            a = new AttributeWidget(childIndex, attr.value(ai).key, attr.value(ai).value, attrBox->parentWidget(), j,i);//create custom AttributeWidget
+                            ai++;
+                        }else{//in ai no attr[aai] is specified
+                            a = new AttributeWidget(childIndex, allAttrList.value(i).key, allAttrList.value(i).value, attrBox->parentWidget(), j,i);//create custom AttributeWidget
+                            a->setDisabled(true);
+                        }
+                        QObject::connect(a,SIGNAL(activateTagAttribute(QModelIndex,int)),this,SLOT(activateAttribute(QModelIndex,int)));//write back change of attribute to model
+                        QObject::connect(a,SIGNAL(deactivateTagAttribute(QModelIndex,int,AttributeWidget*)),this,SLOT(deactivateAttribute(QModelIndex,int,AttributeWidget*)));//write back change of attribute to model
+                        QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));//write back change of attribute to model
+                        attrList->append(a);//save pointer in list for easy remove later
+                        attrBox->addWidget(a,r,c);//add to gridLayout
+
+                    }
+                }else{
+                    aib->setDisabled(true);
+                }
+
+                c = -1;
+                r++;
+            }
+        }
     //handling dynamic attribute view
 }
 
@@ -158,6 +231,12 @@ void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QStr
     if (key == QString("all")){
         for (QList<AttributeWidget*>::iterator i = attrList->begin(); i < attrList->end(); i++){
             if(!(**i).isEnabled())
+                (**i).setValue(value);
+        }
+    }
+    if(model->data(index) == QString("all")){
+        for (QList<AttributeWidget*>::iterator i = attrList->begin(); i < attrList->end(); i++){
+            if(!(**i).isEnabled() && (**i).label() == key)
                 (**i).setValue(value);
         }
     }
@@ -229,6 +308,7 @@ void XMLSettingsEditorWrapper::openXMLFile()
             tree->setSelectionModel(selection);
             QObject::connect(selection,SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(selectionChanged(QModelIndex,QModelIndex)));
 
+
             saveButton->setDisabled(true);
             resetButton->setDisabled(true);
         }
@@ -250,15 +330,39 @@ void XMLSettingsEditorWrapper::selectionChanged(QModelIndex current, QModelIndex
 
 void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attributeIndex)
 {
-    model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+    if (model->attribute(index,0).key == QString("all"))
+        model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+    else
+        model->insertAttribute(index,attributeIndex,model->attribute(model->parent(index),attributeIndex).value,model->attribute(model->parent(index),attributeIndex).value);
+
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
 }
 
 void XMLSettingsEditorWrapper::deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget)
 {
-    widget->setValue(model->attribute(index,0).value); //reset to all-value
+    if (model->attribute(index,0).key == QString("all"))
+        widget->setValue(model->attribute(index,0).value); //reset to all-value
+    else
+        widget->setValue(model->attribute(model->index(0,0,model->parent(index)),attributeIndex).value); //reset to all-value
+
     model->removeAttribute(index, attributeIndex);
+    saveButton->setEnabled(true);
+    resetButton->setEnabled(true);
+}
+
+void XMLSettingsEditorWrapper::activateAttributeTag(QModelIndex index, int attributeIndex)
+{
+    static_cast<TreeItem*>(index.internalPointer())->insertChild(attributeIndex,QString::number(attributeIndex).prepend("a"));
+    optionSelected(index);
+    saveButton->setEnabled(true);
+    resetButton->setEnabled(true);
+}
+
+void XMLSettingsEditorWrapper::deactivateAttributeTag(QModelIndex index, int attributeIndex, AttributeWidget *widget)
+{
+    static_cast<TreeItem*>(index.internalPointer())->removeChild(attributeIndex);
+    optionSelected(index);
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
 }
