@@ -67,6 +67,9 @@ XmlTreeModel::~XmlTreeModel(){
 
 int XmlTreeModel::columnCount(const QModelIndex &parent) const
 {
+//    if (!parent.isValid())
+//        return 0;
+//    else
         return 1;
 }
 
@@ -107,15 +110,16 @@ QModelIndex XmlTreeModel::index(int row, int column, const QModelIndex &parent) 
     TreeItem *parentItem;
 
     if (!parent.isValid())
-        parentItem = root;
-    else
+        return createIndex(0, 0, root);
+    else {
         parentItem = static_cast<TreeItem*>(parent.internalPointer());
 
-    TreeItem *childItem = parentItem->child(row);
-    if (childItem)
-        return createIndex(row, column, childItem);
-    else
-        return QModelIndex();
+        TreeItem *childItem = parentItem->child(row);
+        if (childItem)
+            return createIndex(row, column, childItem);
+        else
+            return QModelIndex();
+    }
 }
 
 QModelIndex XmlTreeModel::parent(const QModelIndex &index) const
@@ -123,10 +127,9 @@ QModelIndex XmlTreeModel::parent(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    TreeItem *childItem = static_cast<TreeItem*>(index.internalPointer());
-    TreeItem *parentItem = childItem->parent();
+    TreeItem *parentItem = static_cast<TreeItem*>(index.internalPointer())->parent();
 
-    if (childItem == root)
+    if (parentItem == 0)
         return QModelIndex();
 
     return createIndex(parentItem->row(), 0, parentItem);
@@ -139,7 +142,7 @@ int XmlTreeModel::rowCount(const QModelIndex &parent) const
         return 0;
 
     if (!parent.isValid())
-        parentItem = root;
+        return 1;
     else
         parentItem = static_cast<TreeItem*>(parent.internalPointer());
 
@@ -176,7 +179,7 @@ bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key
     if (!parent.isValid())
         return false;
 
-    return (!static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(key,value).isEmpty());
+    return (!static_cast<TreeItem*>(parent.internalPointer())->appendAttribute(key,value).isEmpty());
 }
 
 bool XmlTreeModel::save(QFile &device)
@@ -240,6 +243,27 @@ void XmlTreeModel::recursiveSearch(QList<QModelIndex> *list, int row, TreeItem *
     }
     for(int i = 0; i < item->childCount(); i++){//recurse to children
         recursiveSearch(list,i,item->child(i),searchString);
+    }
+}
+
+void XmlTreeModel::insertAttribute(const QModelIndex &parent, int index, const QString &key, const QString &value)
+{
+    if (parent.isValid()){
+        static_cast<TreeItem*>(parent.internalPointer())->insertAttribute(index,key,value);
+    }
+}
+
+TreeItem::Attribute XmlTreeModel::attribute(const QModelIndex &parent, int index) const
+{
+    if (parent.isValid()){
+        return static_cast<TreeItem*>(parent.internalPointer())->attribute(index);
+    }
+}
+
+void XmlTreeModel::removeAttribute(const QModelIndex &parent, int index)
+{
+    if (parent.isValid()){
+        return static_cast<TreeItem*>(parent.internalPointer())->removeAttribute(index);
     }
 }
 

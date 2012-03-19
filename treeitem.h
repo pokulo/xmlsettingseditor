@@ -71,7 +71,11 @@ public:
     void setDescription(QString description);//only one description string can be set per item
 
     QList<Attribute> attributes() const; //returns itemAtributes
-    QString insertAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
+    Attribute attribute(int index) const;
+    QString appendAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
+
+    void insertAttribute(int index, const QString &key, const QString &value);
+    void removeAttribute(int index);
 
 private:
     QList<TreeItem*> childItems;

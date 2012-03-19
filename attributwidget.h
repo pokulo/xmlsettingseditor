@@ -8,23 +8,33 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
+#include <QMouseEvent>
+#include <QPushButton>
 
-class AttributWidget : public QWidget
+class AttributeWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit AttributWidget(QModelIndex index,const QString &label,const QString &value, QWidget *parent = 0);
+    AttributeWidget(QModelIndex index,const QString &label,const QString &value, QWidget *parent = 0, int attributeIndex = 0);
+//    AttributWidget(QModelIndex index,const QString &label,const QString &value,int attributeIndex, QWidget *parent = 0);
+    void setDisabled(bool disabled);
+    bool isEnabled();
+    void setValue(QString value);
 
 private:
     QModelIndex modelIndex;
-    QLabel * labelWidget;
+    QPushButton * labelWidget;
     QLineEdit * valueWidget;
+    int attributeIndex;
 
 signals:
     void attributeChanged(QModelIndex,QString,QString);//indicating changed text of LineEdit -> model
+    void activateAttribute(QModelIndex modelIndex, int attributeIndex);//if clicked to activate attributeWidget
+    void deactivateAttribute(QModelIndex modelIndex, int attributeIndex, AttributeWidget * widget);//if clicked to activate attributeWidget
 
-public slots:
+private slots:
     void valueChanged(QString value);//slot for LineEdit indicating changed text
+    void attributeToggled(bool checked);
 
 };
 

@@ -90,7 +90,7 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
     emit labelChanged(index.data(Qt::DisplayRole).toString()); //set new right-side-title
     emit decriptionChanged(model->description(index));//set new right side description
     //handling dynamic attribute view
-        AttributWidget * a;
+        AttributeWidget * a;
         while (!attrList->isEmpty()){//remove all attribute widgets from
             a = attrList->takeFirst();
             attrBox->removeWidget(a);
@@ -102,17 +102,51 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
         QList<TreeItem::Attribute> attr = model->attributes(index);//get a QList of attributes
         if (!attr.isEmpty()){
             r++;
-            QList<TreeItem::Attribute>::const_iterator i;
-            for( i = attr.constBegin(); i != attr.constEnd(); i++){//adding all attributes as widgets to right-side attrBox (GridLayout) max 3 in a row
+            if (attr.first().key == QString("all")){//all attribute to preset a1 .. a6
                 c++;
-                a = new AttributWidget(index, (*i).key, (*i).value, attrBox->parentWidget());//create custom AttributeWidget
+                //all
+                a = new AttributeWidget(index, attr.first().key, attr.first().value, attrBox->parentWidget());//create custom AttributeWidget
                 attrList->append(a);//save pointer in list for easy remove later
                 attrBox->addWidget(a,r,c);//add to gridLayout
                 QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));//write back change of attribute to model
-                if(c>1){//added widget with c=2 now return to nex row
-                    c = -1;
-                    r++;
+
+                //ai
+                int ai = 1;//attr index
+                for(int i = 1; i <= 6; i++){//generating all a1 .. a6
+                    c++;
+                    if (attr.value(ai).key.contains("a") && attr.value(ai).key.contains(QString::number(i))){//ai is existing special value
+                        a = new AttributeWidget(index, attr.value(ai).key, attr.value(ai).value, attrBox->parentWidget(), i);//create custom AttributeWidget
+                        ai++;
+                    }else{//ai is not specialized (set to all-value)
+                        a = new AttributeWidget(index, QString::number(i).prepend("a"), attr.first().value, attrBox->parentWidget(), i);//create custom AttributeWidget
+                        a->setDisabled(true);
+                    }
+                    QObject::connect(a,SIGNAL(activateAttribute(QModelIndex,int)),this,SLOT(activateAttribute(QModelIndex,int)));//write back change of attribute to model
+                    QObject::connect(a,SIGNAL(deactivateAttribute(QModelIndex,int,AttributeWidget*)),this,SLOT(deactivateAttribute(QModelIndex,int,AttributeWidget*)));//write back change of attribute to model
+                    QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));//write back change of attribute to model
+                    attrList->append(a);//save pointer in list for easy remove later
+                    attrBox->addWidget(a,r,c);//add to gridLayout
+                    if(c>1){//added widget with c=2 now return to nex row
+                        c = -1;
+                        r++;
+                    }
                 }
+
+            }else{ //no all-attribute
+
+                QList<TreeItem::Attribute>::const_iterator i;
+                for( i = attr.constBegin(); i != attr.constEnd(); i++){//adding all attributes as widgets to right-side attrBox (GridLayout) max 3 in a row
+                    c++;
+                    a = new AttributeWidget(index, (*i).key, (*i).value, attrBox->parentWidget());//create custom AttributeWidget
+                    attrList->append(a);//save pointer in list for easy remove later
+                    attrBox->addWidget(a,r,c);//add to gridLayout
+                    QObject::connect(a,SIGNAL(attributeChanged(QModelIndex,QString,QString)),this,SLOT(datumChanged(QModelIndex,QString,QString)));//write back change of attribute to model
+                    if(c>1){//added widget with c=2 now return to nex row
+                        c = -1;
+                        r++;
+                    }
+                }
+
             }
         }
     //handling dynamic attribute view
@@ -121,6 +155,12 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
 void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QString value) //SLOT
 {
     model->changeAttribute(index,key,value);
+    if (key == QString("all")){
+        for (QList<AttributeWidget*>::iterator i = attrList->begin(); i < attrList->end(); i++){
+            if(!(**i).isEnabled())
+                (**i).setValue(value);
+        }
+    }
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
 }
@@ -170,6 +210,13 @@ void XMLSettingsEditorWrapper::openXMLFile()
         }catch(QFile::FileError){
             model = 0;
         }
+
+        QModelIndex ind = model->index(0,0).parent();
+
+        Q_ASSERT_X(model->index(0,0).parent() == QModelIndex(),
+                       "QAbstractItemView::setModel",
+                       "The parent of a top level index should be invalid");
+
         if (model){
             tree->setModel(model); //connecting custom XMLTreeModel
 
@@ -182,6 +229,8 @@ void XMLSettingsEditorWrapper::openXMLFile()
             tree->setSelectionModel(selection);
             QObject::connect(selection,SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(selectionChanged(QModelIndex,QModelIndex)));
 
+            saveButton->setDisabled(true);
+            resetButton->setDisabled(true);
         }
 
     }
@@ -197,4 +246,19 @@ void XMLSettingsEditorWrapper::openFileDialog()//SLOT
 void XMLSettingsEditorWrapper::selectionChanged(QModelIndex current, QModelIndex previous)
 {
     optionSelected(current);
+}
+
+void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attributeIndex)
+{
+    model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+    saveButton->setEnabled(true);
+    resetButton->setEnabled(true);
+}
+
+void XMLSettingsEditorWrapper::deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget)
+{
+    widget->setValue(model->attribute(index,0).value); //reset to all-value
+    model->removeAttribute(index, attributeIndex);
+    saveButton->setEnabled(true);
+    resetButton->setEnabled(true);
 }

@@ -116,7 +116,7 @@ QList<TreeItem::Attribute> TreeItem::attributes() const
     return itemAttributes;
 }
 
-QString TreeItem::insertAttribute(const QString &key,const QString &value)
+QString TreeItem::appendAttribute(const QString &key,const QString &value)
 {
     QString ret("");
     if (!itemAttributes.isEmpty()){
@@ -130,14 +130,55 @@ QString TreeItem::insertAttribute(const QString &key,const QString &value)
             }
         }
 
-        //if attribute hasn't exist append a new one
-        if (ret.isEmpty()){
-            TreeItem::Attribute a;
-            a.key = key;
-            a.value = value;
-            itemAttributes.append(a);
-        }
-
     }
+
+    //if attribute hasn't exist append a new one
+    if (ret.isEmpty()){
+        TreeItem::Attribute a;
+        a.key = key;
+        a.value = value;
+        itemAttributes.append(a);
+    }
+
     return ret;//return the old value (empty if attribute hasn't exist)
+}
+
+void TreeItem::insertAttribute(int index, const QString &key, const QString &value)
+{
+    TreeItem::Attribute a;
+    a.key = key;
+    a.value = value;
+    if (index > 0){
+        int i = 1;
+        int j = 1;
+        while (i < itemAttributes.count() && j < index){
+            while (!itemAttributes.value(i).key.contains(QString::number(j)) && j < index){
+                j++;
+            }
+            if (j != index)
+                i++;
+        }
+        itemAttributes.insert(i,a);
+    }else{
+        itemAttributes.insert(index,a);
+    }
+}
+
+TreeItem::Attribute TreeItem::attribute(int index) const
+{
+    return itemAttributes.value(index);
+}
+
+void TreeItem::removeAttribute(int index)
+{
+    if (index > 0){//only
+        int i = 0;
+        while (!itemAttributes.value(i).key.contains(QString::number(index)) && i < itemAttributes.count()){
+            i++;
+        }
+        if (i <= itemAttributes.count())
+            itemAttributes.removeAt(i);
+    }else{
+        itemAttributes.removeAt(index);
+    }
 }
