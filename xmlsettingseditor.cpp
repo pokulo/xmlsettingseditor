@@ -344,7 +344,6 @@ void XMLSettingsEditor::datumChanged(QModelIndex index, QString key, QString val
 
 void XMLSettingsEditor::saveChanges() //SLOT
 {
-//    sourceFile = sourceFile.append("~new.xml");//todo: save changes in files with suffix
     QFile file(sourceFile);
     if (model->save(file)){
         saveButton->setDisabled(true);

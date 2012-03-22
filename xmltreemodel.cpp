@@ -2,8 +2,6 @@
 #include <QDebug>
 #include <QTextCodec>
 
-#include "treeitem.h"
-
 TreeItem::TreeItem(const QString &name, TreeItem *parent)
 {
     parentItem = parent;
@@ -320,7 +318,7 @@ bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key
 
 bool XmlTreeModel::save(QFile &device)
 {
-    device.open(QIODevice::ReadWrite);
+    device.open(QIODevice::WriteOnly);
     QXmlStreamWriter xmlWriter(&device);
 
     xmlWriter.setAutoFormatting(true);//adds line breaks

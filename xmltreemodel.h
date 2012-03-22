@@ -27,8 +27,8 @@ public:
 
     QString name() const;
 
-    void insertChild(int index, const QString &key);
-    void removeChild(int index);
+    void insertChild(int index, const QString &key);//index is the "i" of a1..ai..a6, key should be ai
+    void removeChild(int index);//index is the "i" of a1..ai..a6
 
     QString description() const;
     void setDescription(QString description);//only one description string can be set per item
@@ -37,8 +37,8 @@ public:
     Attribute attribute(int index) const;
     QString appendAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
 
-    void insertAttribute(int index, const QString &key, const QString &value);
-    void removeAttribute(int index);
+    void insertAttribute(int index, const QString &key, const QString &value);//inserts attribute index is the "i" of a1..ai..a6 not the actual position in QList of attributes
+    void removeAttribute(int index); //index is the "i" of a1..ai..a6
 
 private:
     QList<TreeItem*> childItems;
