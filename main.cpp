@@ -1,11 +1,11 @@
 #include <QtGui/QApplication>
-#include "xmlsettingseditorwrapper.h"
+#include "xmlsettingseditor.h"
 
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    XMLSettingsEditorWrapper * w = new XMLSettingsEditorWrapper(0);
+    XMLSettingsEditor * w = new XMLSettingsEditor(0);
     w->show();
 
     return a.exec();

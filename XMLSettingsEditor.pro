@@ -11,11 +11,12 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        xmlsettingseditorwrapper.cpp \
-    xmltreemodel.cpp
+    xmltreemodel.cpp \
+    xmlsettingseditor.cpp
 
-HEADERS  += xmlsettingseditorwrapper.h \
-    xmltreemodel.h
+HEADERS  += \
+    xmltreemodel.h \
+    xmlsettingseditor.h
 
 FORMS    +=
 

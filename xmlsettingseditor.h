@@ -47,8 +47,8 @@ private slots:
 #endif // ATTRIBUTWIDGET_H
 
 
-#ifndef XMLSETTINGSEDITORWRAPPER_H
-#define XMLSETTINGSEDITORWRAPPER_H
+#ifndef XMLSETTINGSEDITOR_H
+#define XMLSETTINGSEDITOR_H
 
 #include <QMainWindow>
 #include <QModelIndex>
@@ -67,13 +67,13 @@ private slots:
 #include <QSpacerItem>
 #include <QResource>
 
-class XMLSettingsEditorWrapper : public QSplitter
+class XMLSettingsEditor : public QSplitter
 {
     Q_OBJECT
 
 public:
-    explicit XMLSettingsEditorWrapper(QWidget *parent = 0);
-    inline ~XMLSettingsEditorWrapper(){}
+    explicit XMLSettingsEditor(QWidget *parent = 0);
+    inline ~XMLSettingsEditor(){}
 
 private:
     QString sourceFile;
@@ -135,4 +135,4 @@ signals:
 
 };
 
-#endif // XMLSETTINGSEDITORWRAPPER_H
+#endif // XMLSETTINGSEDITOR_H

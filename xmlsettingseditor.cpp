@@ -1,4 +1,4 @@
-#include "xmlsettingseditorwrapper.h"
+#include "xmlsettingseditor.h"
 
 AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const QString &value, QWidget *parent, int attributeIndex, int attributeTagIndex,bool hasValue) : QWidget(parent){
 
@@ -77,7 +77,7 @@ QString AttributeWidget::label()
 
 
 
-XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(parent)
+XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
 {
     init(); //initialising members (defined in header)
 
@@ -178,7 +178,7 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(
     QObject::connect(this, SIGNAL(decriptionChanged(QString)), optionDescription, SLOT(setPlainText(QString))); //write description to view
 }
 
-void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
+void XMLSettingsEditor::optionSelected(QModelIndex index){ //SLOT
     if (history.indexOf(index) < 0 || abs(history.indexOf(index)-lastSelected)>1){
         while (history.count()-1 > lastSelected)//cut history list from lastSelected
             history.takeLast();
@@ -323,7 +323,7 @@ void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
     //handling dynamic attribute view
 }
 
-void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QString value) //SLOT
+void XMLSettingsEditor::datumChanged(QModelIndex index, QString key, QString value) //SLOT
 {
     model->changeAttribute(index,key,value);
     if (key == QString("all")){
@@ -342,7 +342,7 @@ void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QStr
     resetButton->setEnabled(true);
 }
 
-void XMLSettingsEditorWrapper::saveChanges() //SLOT
+void XMLSettingsEditor::saveChanges() //SLOT
 {
 //    sourceFile = sourceFile.append("~new.xml");//todo: save changes in files with suffix
     QFile file(sourceFile);
@@ -352,7 +352,7 @@ void XMLSettingsEditorWrapper::saveChanges() //SLOT
     }
 }
 
-void XMLSettingsEditorWrapper::fastSearch(QString searchString)//SLOT
+void XMLSettingsEditor::fastSearch(QString searchString)//SLOT
 {
     if (model){
         resultList = model->findItems(searchString);
@@ -366,7 +366,7 @@ void XMLSettingsEditorWrapper::fastSearch(QString searchString)//SLOT
 
 }
 
-void XMLSettingsEditorWrapper::nextFound()//SLOT
+void XMLSettingsEditor::nextFound()//SLOT
 {
     if (resultList.count() > 0){
         lastIndex++;
@@ -378,7 +378,7 @@ void XMLSettingsEditorWrapper::nextFound()//SLOT
     }
 }
 
-void XMLSettingsEditorWrapper::openXMLFile()
+void XMLSettingsEditor::openXMLFile()
 {
     if (!sourceFile.isEmpty()){
         QFile file(sourceFile);
@@ -416,19 +416,19 @@ void XMLSettingsEditorWrapper::openXMLFile()
     }
 }
 
-void XMLSettingsEditorWrapper::openFileDialog()//SLOT
+void XMLSettingsEditor::openFileDialog()//SLOT
 {
     //creating new data model
     sourceFile = QFileDialog::getOpenFileName(0,"Open XML file", "../testdata/");
     openXMLFile();
 }
 
-void XMLSettingsEditorWrapper::selectionChanged(QModelIndex current, QModelIndex previous)
+void XMLSettingsEditor::selectionChanged(QModelIndex current, QModelIndex previous)
 {
     optionSelected(current);
 }
 
-void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attributeIndex)
+void XMLSettingsEditor::activateAttribute(QModelIndex index, int attributeIndex)
 {
     if (model->attribute(index,0).key == QString("all"))
         model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
@@ -455,7 +455,7 @@ void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attribut
     resetButton->setEnabled(true);
 }
 
-void XMLSettingsEditorWrapper::deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget)
+void XMLSettingsEditor::deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget)
 {
     if (model->attribute(index,0).key == QString("all")){
         widget->setValue(model->attribute(index,0).value); //reset to all-value
@@ -478,7 +478,7 @@ void XMLSettingsEditorWrapper::deactivateAttribute(QModelIndex index, int attrib
     resetButton->setEnabled(true);
 }
 
-void XMLSettingsEditorWrapper::activateAttributeTag(QModelIndex index, int attributeIndex)
+void XMLSettingsEditor::activateAttributeTag(QModelIndex index, int attributeIndex)
 {
     static_cast<TreeItem*>(index.internalPointer())->insertChild(attributeIndex,QString::number(attributeIndex).prepend("a"));
     optionSelected(index);
@@ -486,7 +486,7 @@ void XMLSettingsEditorWrapper::activateAttributeTag(QModelIndex index, int attri
     resetButton->setEnabled(true);
 }
 
-void XMLSettingsEditorWrapper::deactivateAttributeTag(QModelIndex index, int attributeIndex, AttributeWidget *widget)
+void XMLSettingsEditor::deactivateAttributeTag(QModelIndex index, int attributeIndex, AttributeWidget *widget)
 {
     static_cast<TreeItem*>(index.internalPointer())->removeChild(attributeIndex);
     optionSelected(index);
@@ -494,7 +494,7 @@ void XMLSettingsEditorWrapper::deactivateAttributeTag(QModelIndex index, int att
     resetButton->setEnabled(true);
 }
 
-void XMLSettingsEditorWrapper::goBackwards()
+void XMLSettingsEditor::goBackwards()
 {
     if (history.count() > 0 && lastSelected > 0){
         lastSelected--;
@@ -505,7 +505,7 @@ void XMLSettingsEditorWrapper::goBackwards()
         backwardButton->setDisabled(true);
 }
 
-void XMLSettingsEditorWrapper::goForwards()
+void XMLSettingsEditor::goForwards()
 {
     if (history.count() > lastSelected+1){
         lastSelected++;
