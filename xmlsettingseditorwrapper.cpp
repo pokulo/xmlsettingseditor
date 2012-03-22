@@ -1,6 +1,81 @@
 #include "xmlsettingseditorwrapper.h"
 
-#include <QDebug>
+AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const QString &value, QWidget *parent, int attributeIndex, int attributeTagIndex,bool hasValue) : QWidget(parent){
+
+    this->setAttribute(Qt::WA_DeleteOnClose);
+    modelIndex = index;
+    labelWidget = new QPushButton(label,this);
+    labelWidget->setMinimumWidth(30);
+    labelWidget->setCheckable(true);
+    if (attributeIndex != 0){
+        labelWidget->setChecked(true);
+    }else{
+        labelWidget->setDisabled(true);
+        labelWidget->setFlat(true);
+    }
+
+    QHBoxLayout * layout = new QHBoxLayout(this);
+    layout->addWidget(labelWidget);
+    QObject::connect(labelWidget,SIGNAL(clicked(bool)),this,SLOT(attributeToggled(bool)));
+
+
+    if (hasValue){
+        valueWidget = new QLineEdit(value,this);
+        valueWidget->setMinimumWidth(50);
+        layout->addWidget(valueWidget);
+        QObject::connect(valueWidget,SIGNAL(textEdited(QString)),this,SLOT(valueChanged(QString)));
+    }else{
+        valueWidget = 0;
+    }
+
+    this->setLayout(layout);
+
+    this->attributeIndex = attributeIndex;
+    this->attributeTagIndex = attributeTagIndex;
+}
+
+void AttributeWidget::valueChanged(QString value)//SLOT
+{
+    emit attributeChanged(modelIndex, labelWidget->text(), value);
+}
+
+void AttributeWidget::setDisabled(bool disabled)
+{
+    if (valueWidget)
+        valueWidget->setDisabled(disabled);
+    labelWidget->setChecked(false);
+}
+
+void AttributeWidget::attributeToggled(bool checked)
+{
+    if (valueWidget)
+        valueWidget->setEnabled(checked);
+    if (checked){
+        emit activateAttribute(modelIndex,attributeIndex);
+        emit activateTagAttribute(modelIndex,attributeTagIndex);
+    }else{
+        emit deactivateAttribute(modelIndex,attributeIndex, this);
+        emit deactivateTagAttribute(modelIndex,attributeTagIndex, this);
+    }
+}
+
+void AttributeWidget::setValue(QString value)//SLOT
+{
+    if (valueWidget)
+        valueWidget->setText(value);
+}
+
+bool AttributeWidget::isEnabled()
+{
+    return labelWidget->isChecked();
+}
+
+QString AttributeWidget::label()
+{
+    return labelWidget->text();
+}
+
+
 
 XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(parent)
 {
@@ -12,7 +87,7 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(
 
         QHBoxLayout * searchHB = new QHBoxLayout(leftVB);
         QLineEdit * searchInput = new QLineEdit(leftVB);//fast search bar
-        QPushButton * searchButton= new QPushButton(QIcon("../icons/search.png"),"",leftVB);
+        QPushButton * searchButton= new QPushButton(QIcon(":/xmleditor/icons/search"),"",leftVB);
 
         searchHB->addWidget(searchInput,4);
         searchHB->addWidget(searchButton,1);
@@ -49,20 +124,35 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(
         optionDescription->setReadOnly(true); //for now description does need to be changed (no associated functionality implemented)
         attrBox = new QGridLayout(rightVB); //layout to dynamically view attributes
 
-        saveButton = new QPushButton(tr("save"),rightVB);
+        backwardButton = new QPushButton(QIcon(":/xmleditor/icons/back"),"",rightVB);
+        backwardButton->setToolTip(tr("backwards selection"));
+        backwardButton->setDisabled(true);
+        QObject::connect(backwardButton,SIGNAL(clicked()),this,SLOT(goBackwards()));
+
+        forwardButton = new QPushButton(QIcon(":/xmleditor/icons/forward"),"",rightVB);
+        forwardButton->setToolTip(tr("forward selection"));
+        forwardButton->setDisabled(true);
+        QObject::connect(forwardButton,SIGNAL(clicked()),this,SLOT(goForwards()));
+
+        saveButton = new QPushButton(QIcon(":/xmleditor/icons/save"),"",rightVB);
         saveButton->setDisabled(true);
+        saveButton->setToolTip(tr("save"));
         QObject::connect(saveButton,SIGNAL(clicked()),this,SLOT(saveChanges()));
 
-        QPushButton * openButton= new QPushButton(tr("open"),rightVB);
+        QPushButton * openButton= new QPushButton(QIcon(":/xmleditor/icons/open"),"",rightVB);
+        openButton->setToolTip(tr("open XML-file"));
         QObject::connect(openButton,SIGNAL(clicked()),this,SLOT(openFileDialog()));
 
-        resetButton= new QPushButton(tr("reset"),rightVB);
+        resetButton= new QPushButton(QIcon(":/xmleditor/icons/reset"),"",rightVB);
         resetButton->setDisabled(true);
+        resetButton->setToolTip(tr("reload data from file"));
         QObject::connect(resetButton,SIGNAL(clicked()),this,SLOT(openXMLFile()));
 
         //puting everything together
 
         titleHL->addWidget(optionName,5);//top (title)
+        titleHL->addWidget(backwardButton,1);
+        titleHL->addWidget(forwardButton,1);
         titleHL->addWidget(openButton,1);
         titleHL->addWidget(saveButton,1);
         titleHL->addWidget(resetButton,1);
@@ -89,6 +179,14 @@ XMLSettingsEditorWrapper::XMLSettingsEditorWrapper(QWidget *parent) : QSplitter(
 }
 
 void XMLSettingsEditorWrapper::optionSelected(QModelIndex index){ //SLOT
+    if (history.indexOf(index) < 0 || abs(history.indexOf(index)-lastSelected)>1){
+        while (history.count()-1 > lastSelected)//cut history list from lastSelected
+            history.takeLast();
+        lastSelected = history.count();//save new position
+        history.append(index);//save new index
+        backwardButton->setEnabled(true);
+    }
+
     emit labelChanged(index.data(Qt::DisplayRole).toString()); //set new right-side-title
     emit decriptionChanged(model->description(index));//set new right side description
     //handling dynamic attribute view
@@ -246,7 +344,7 @@ void XMLSettingsEditorWrapper::datumChanged(QModelIndex index, QString key, QStr
 
 void XMLSettingsEditorWrapper::saveChanges() //SLOT
 {
-    sourceFile = sourceFile.append("~new.xml");//todo: save changes in files with suffix
+//    sourceFile = sourceFile.append("~new.xml");//todo: save changes in files with suffix
     QFile file(sourceFile);
     if (model->save(file)){
         saveButton->setDisabled(true);
@@ -290,8 +388,6 @@ void XMLSettingsEditorWrapper::openXMLFile()
             model = 0;
         }
 
-        QModelIndex ind = model->index(0,0).parent();
-
         Q_ASSERT_X(model->index(0,0).parent() == QModelIndex(),
                        "QAbstractItemView::setModel",
                        "The parent of a top level index should be invalid");
@@ -309,6 +405,10 @@ void XMLSettingsEditorWrapper::openXMLFile()
             QObject::connect(selection,SIGNAL(currentChanged(QModelIndex,QModelIndex)),this,SLOT(selectionChanged(QModelIndex,QModelIndex)));
 
 
+            history.clear();
+            lastSelected = -1;
+            backwardButton->setDisabled(true);
+            forwardButton->setDisabled(true);
             saveButton->setDisabled(true);
             resetButton->setDisabled(true);
         }
@@ -332,8 +432,24 @@ void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attribut
 {
     if (model->attribute(index,0).key == QString("all"))
         model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
-    else
-        model->insertAttribute(index,attributeIndex,model->attribute(model->parent(index),attributeIndex).value,model->attribute(model->parent(index),attributeIndex).value);
+    else{
+
+        QModelIndex all = model->parent(index).child(0,0);
+        if (attributeIndex > 0){
+            int i = 1;
+            int j = 1;
+            while (i < model->attributes(index).count() && j < attributeIndex){
+                while (!(model->attribute(index,i).key == model->attribute(all,j).key) && j < attributeIndex){
+                    j++;
+                }
+                if (j != attributeIndex)
+                    i++;
+            }
+            model->insertAttribute(index,i,allAttrList.value(attributeIndex).key,allAttrList.value(attributeIndex).value);
+        }else{
+            model->insertAttribute(index,attributeIndex,allAttrList.value(attributeIndex).key,allAttrList.value(attributeIndex).value);
+        }
+    }
 
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
@@ -341,12 +457,23 @@ void XMLSettingsEditorWrapper::activateAttribute(QModelIndex index, int attribut
 
 void XMLSettingsEditorWrapper::deactivateAttribute(QModelIndex index, int attributeIndex, AttributeWidget * widget)
 {
-    if (model->attribute(index,0).key == QString("all"))
+    if (model->attribute(index,0).key == QString("all")){
         widget->setValue(model->attribute(index,0).value); //reset to all-value
-    else
-        widget->setValue(model->attribute(model->index(0,0,model->parent(index)),attributeIndex).value); //reset to all-value
+        int i = 0;
+        while(!model->attribute(index,i).key.contains(QString::number(attributeIndex)))
+            i++;
+        if (i < model->attributes(index).count())
+            model->removeAttribute(index, i);
 
-    model->removeAttribute(index, attributeIndex);
+    }else{
+        widget->setValue(model->attribute(model->index(0,0,model->parent(index)),attributeIndex).value); //reset to all-value
+        int i = 0;
+        while(model->attribute(index,i).key != allAttrList.value(attributeIndex).key)
+            i++;
+        if (i < model->attributes(index).count())
+            model->removeAttribute(index, i);
+
+    }
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
 }
@@ -365,4 +492,26 @@ void XMLSettingsEditorWrapper::deactivateAttributeTag(QModelIndex index, int att
     optionSelected(index);
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
+}
+
+void XMLSettingsEditorWrapper::goBackwards()
+{
+    if (history.count() > 0 && lastSelected > 0){
+        lastSelected--;
+        tree->setCurrentIndex(history.value(lastSelected));
+        forwardButton->setEnabled(true);
+    }
+    if (lastSelected==0)
+        backwardButton->setDisabled(true);
+}
+
+void XMLSettingsEditorWrapper::goForwards()
+{
+    if (history.count() > lastSelected+1){
+        lastSelected++;
+        tree->setCurrentIndex(history.value(lastSelected));
+        backwardButton->setEnabled(true);
+    }
+    if (history.count() == lastSelected+1)
+        forwardButton->setDisabled(true);
 }

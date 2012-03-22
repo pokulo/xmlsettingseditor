@@ -12,13 +12,20 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         xmlsettingseditorwrapper.cpp \
-    xmltreemodel.cpp \
-    treeitem.cpp \
-    attributwidget.cpp
+    xmltreemodel.cpp
 
 HEADERS  += xmlsettingseditorwrapper.h \
-    xmltreemodel.h \
-    treeitem.h \
-    attributwidget.h
+    xmltreemodel.h
 
 FORMS    +=
+
+OTHER_FILES += \
+    icons/search.png \
+    icons/save.png \
+    icons/reset.png \
+    icons/open.png \
+    icons/forward.png \
+    icons/back.png
+
+RESOURCES += \
+    icons.qrc

@@ -2,6 +2,154 @@
 #include <QDebug>
 #include <QTextCodec>
 
+#include "treeitem.h"
+
+TreeItem::TreeItem(const QString &name, TreeItem *parent)
+{
+    parentItem = parent;
+    itemName = name;
+    itemDescription = "";
+}
+
+TreeItem::TreeItem(const QString &name,const QList<Attribute> &attributes,const QString &description, TreeItem *parent){
+    parentItem = parent;
+    itemName = name;
+    itemDescription = description;
+    itemAttributes = attributes;
+}
+
+TreeItem::~TreeItem()
+{
+    qDeleteAll(childItems);
+}
+
+void TreeItem::appendChild(TreeItem *item)
+{
+    Q_ASSERT(item);//debug only
+    childItems.append(item);
+}
+
+void TreeItem::insertChild(int index, const QString &key){
+    TreeItem * a = new TreeItem(key,this);
+    if (index > 0){
+        int i = 1;
+        int j = 1;
+        while (i < childItems.count() && j < index){
+            while (!childItems.value(i)->name().contains(QString::number(j)) && j < index){
+                j++;
+            }
+            if (j != index)
+                i++;
+        }
+        childItems.insert(i,a);
+    }else{
+        childItems.insert(index,a);
+    }
+}
+
+TreeItem *TreeItem::child(int row)
+{
+    return childItems.value(row);
+}
+
+int TreeItem::childCount() const
+{
+    return childItems.count();
+}
+
+TreeItem *TreeItem::parent()
+{
+    return parentItem;
+}
+
+int TreeItem::row() const
+{
+    if (parentItem)//because parent of root is 0x0
+        return parentItem->childItems.indexOf(const_cast<TreeItem*>(this));
+
+    return 0;
+}
+
+QString TreeItem::name() const
+{
+    return itemName;
+}
+
+QString TreeItem::description() const
+{
+    return itemDescription;
+}
+
+void TreeItem::setDescription(QString description)
+{
+    itemDescription = description;
+}
+
+QList<TreeItem::Attribute> TreeItem::attributes() const
+{
+    return itemAttributes;
+}
+
+QString TreeItem::appendAttribute(const QString &key,const QString &value)
+{
+    QString ret("");
+    if (!itemAttributes.isEmpty()){
+
+        //test if attribute exists -> replace value
+        QList<Attribute>::iterator i;
+        for(i = itemAttributes.begin(); (i != itemAttributes.end()) && ret.isEmpty(); i++){
+            if (key == (*i).key){//found attribute
+                ret = (*i).value; //store old value
+                (*i).value = value; //overwrite with new
+            }
+        }
+
+    }
+
+    //if attribute hasn't exist append a new one
+    if (ret.isEmpty()){
+        TreeItem::Attribute a;
+        a.key = key;
+        a.value = value;
+        itemAttributes.append(a);
+    }
+
+    return ret;//return the old value (empty if attribute hasn't exist)
+}
+
+void TreeItem::insertAttribute(int index, const QString &key, const QString &value)
+{
+    TreeItem::Attribute a;
+    a.key = key;
+    a.value = value;
+    itemAttributes.insert(index,a);
+}
+
+TreeItem::Attribute TreeItem::attribute(int index) const
+{
+    return itemAttributes.value(index);
+}
+
+void TreeItem::removeAttribute(int index)
+{
+   itemAttributes.removeAt(index);
+}
+
+void TreeItem::removeChild(int index)
+{
+    if (index > 0){//only
+        int i = 0;
+        while (!childItems.value(i)->name().contains(QString::number(index)) && i < childItems.count()){
+            i++;
+        }
+        if (i <= childItems.count())
+            childItems.removeAt(i);
+    }else{
+        childItems.removeAt(index);
+    }
+}
+
+
 XmlTreeModel::XmlTreeModel(QFile &device, QObject *par) : QAbstractItemModel(par){
     //for now readonly
     init();
@@ -99,17 +247,10 @@ QVariant XmlTreeModel::headerData(int section, Qt::Orientation orientation, int 
 
 QModelIndex XmlTreeModel::index(int row, int column, const QModelIndex &parent) const
 {
-//    if (!hasIndex(row, column, parent))
-//        return QModelIndex();
-
-    TreeItem *parentItem;
-
     if (!parent.isValid())
         return createIndex(0, 0, root);
     else {
-        parentItem = static_cast<TreeItem*>(parent.internalPointer());
-
-        TreeItem *childItem = parentItem->child(row);
+        TreeItem *childItem = static_cast<TreeItem*>(parent.internalPointer())->child(row);
         if (childItem)
             return createIndex(row, column, childItem);
         else
