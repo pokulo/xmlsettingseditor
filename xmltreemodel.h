@@ -35,7 +35,7 @@ public:
 
     QList<Attribute> attributes() const; //returns itemAtributes
     Attribute attribute(int index) const;
-    QString appendAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
+    QString setAttribute(const QString &key,const QString &value);//overwrites and returns old value if attribute existed before, otherwise returns QString("")
 
     void insertAttribute(int index, const QString &key, const QString &value);//inserts attribute index is the "i" of a1..ai..a6 not the actual position in QList of attributes
     void removeAttribute(int index); //index is the "i" of a1..ai..a6
@@ -85,6 +85,9 @@ public:
     void insertAttribute(const QModelIndex &parent, int index, const QString &key, const QString &value);
     void removeAttribute(const QModelIndex &parent, int index);
     //to be continued (i.e. changing structure, description etc.)
+
+    void insertChild(QModelIndex index, int aIndex, QString name);
+    void removeChild(QModelIndex index, int aIndex);
 
     bool save(QFile &device); //save modifications to specified file
 

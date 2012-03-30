@@ -430,13 +430,26 @@ void XMLSettingsEditor::selectionChanged(QModelIndex current, QModelIndex previo
 void XMLSettingsEditor::activateAttribute(QModelIndex index, int attributeIndex)
 {
     if (model->attribute(index,0).key == QString("all"))
-        model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+        if (attributeIndex > 0){
+            int i = 1;
+            int j = 1;
+            while (i < model->attributes(index).count() && j < attributeIndex){
+                while (!(model->attribute(index,i).key.contains(QString::number(j))) && j < attributeIndex){
+                    j++;
+                }
+                if (j != attributeIndex)
+                    i++;
+            }
+            model->insertAttribute(index,i,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+        }else{
+            model->insertAttribute(index,attributeIndex,QString::number(attributeIndex).prepend("a"),model->attribute(index,0).value);
+        }
     else{
 
         QModelIndex all = model->parent(index).child(0,0);
         if (attributeIndex > 0){
-            int i = 1;
-            int j = 1;
+            int i = 0;
+            int j = 0;
             while (i < model->attributes(index).count() && j < attributeIndex){
                 while (!(model->attribute(index,i).key == model->attribute(all,j).key) && j < attributeIndex){
                     j++;
@@ -479,7 +492,21 @@ void XMLSettingsEditor::deactivateAttribute(QModelIndex index, int attributeInde
 
 void XMLSettingsEditor::activateAttributeTag(QModelIndex index, int attributeIndex)
 {
-    static_cast<TreeItem*>(index.internalPointer())->insertChild(attributeIndex,QString::number(attributeIndex).prepend("a"));
+    if (attributeIndex > 0){
+        int i = 1;
+        int j = 1;
+        while (i < model->rowCount(index) && j < attributeIndex){
+            while (!model->data(model->index(i,0,index)).toString().contains(QString::number(j)) && j < attributeIndex){
+                j++;
+            }
+            if (j != attributeIndex)
+                i++;
+        }
+        model->insertChild(index,i,QString::number(attributeIndex).prepend("a"));
+    }else{
+        model->insertChild(index,attributeIndex,QString::number(attributeIndex).prepend("a"));
+    }
+
     optionSelected(index);
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);
@@ -487,7 +514,16 @@ void XMLSettingsEditor::activateAttributeTag(QModelIndex index, int attributeInd
 
 void XMLSettingsEditor::deactivateAttributeTag(QModelIndex index, int attributeIndex, AttributeWidget *widget)
 {
-    static_cast<TreeItem*>(index.internalPointer())->removeChild(attributeIndex);
+    if (attributeIndex > 0){
+        int i = 0;
+        while (!model->data(model->index(i,0,index)).toString().contains(QString::number(attributeIndex)) && i < model->rowCount(index)){
+            i++;
+        }
+        if (i <= model->rowCount(index))
+            model->removeChild(index,i);
+    }else{
+        model->removeChild(index,attributeIndex);
+    }
     optionSelected(index);
     saveButton->setEnabled(true);
     resetButton->setEnabled(true);

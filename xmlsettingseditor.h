@@ -1,7 +1,7 @@
 #ifndef ATTRIBUTWIDGET_H
 #define ATTRIBUTWIDGET_H
 
-#include <xmltreemodel.h>
+#include "xmltreemodel.h"
 
 #include <QWidget>
 #include <QString>

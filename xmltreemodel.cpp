@@ -28,21 +28,7 @@ void TreeItem::appendChild(TreeItem *item)
 }
 
 void TreeItem::insertChild(int index, const QString &key){
-    TreeItem * a = new TreeItem(key,this);
-    if (index > 0){
-        int i = 1;
-        int j = 1;
-        while (i < childItems.count() && j < index){
-            while (!childItems.value(i)->name().contains(QString::number(j)) && j < index){
-                j++;
-            }
-            if (j != index)
-                i++;
-        }
-        childItems.insert(i,a);
-    }else{
-        childItems.insert(index,a);
-    }
+    childItems.insert(index,new TreeItem(key,this));
 }
 
 TreeItem *TreeItem::child(int row)
@@ -88,7 +74,7 @@ QList<TreeItem::Attribute> TreeItem::attributes() const
     return itemAttributes;
 }
 
-QString TreeItem::appendAttribute(const QString &key,const QString &value)
+QString TreeItem::setAttribute(const QString &key,const QString &value)
 {
     QString ret("");
     if (!itemAttributes.isEmpty()){
@@ -135,16 +121,7 @@ void TreeItem::removeAttribute(int index)
 
 void TreeItem::removeChild(int index)
 {
-    if (index > 0){//only
-        int i = 0;
-        while (!childItems.value(i)->name().contains(QString::number(index)) && i < childItems.count()){
-            i++;
-        }
-        if (i <= childItems.count())
-            childItems.removeAt(i);
-    }else{
-        childItems.removeAt(index);
-    }
+    childItems.removeAt(index);
 }
 
 
@@ -313,7 +290,7 @@ bool XmlTreeModel::changeAttribute(const QModelIndex &parent, const QString &key
     if (!parent.isValid())
         return false;
 
-    return (!static_cast<TreeItem*>(parent.internalPointer())->appendAttribute(key,value).isEmpty());
+    return (!static_cast<TreeItem*>(parent.internalPointer())->setAttribute(key,value).isEmpty());
 }
 
 bool XmlTreeModel::save(QFile &device)
@@ -399,5 +376,19 @@ void XmlTreeModel::removeAttribute(const QModelIndex &parent, int index)
     if (parent.isValid()){
         return static_cast<TreeItem*>(parent.internalPointer())->removeAttribute(index);
     }
+}
+
+void XmlTreeModel::insertChild(QModelIndex index, int aIndex, QString name)
+{
+    this->beginInsertRows(index, aIndex, aIndex);
+    static_cast<TreeItem*>(index.internalPointer())->insertChild(aIndex,name);
+    this->endInsertRows();
+}
+
+void XmlTreeModel::removeChild(QModelIndex index, int aIndex)
+{
+    this->beginRemoveRows(index,aIndex, aIndex);
+    static_cast<TreeItem*>(index.internalPointer())->removeChild(aIndex);
+    this->endRemoveRows();
 }
 
