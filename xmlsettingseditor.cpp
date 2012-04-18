@@ -28,8 +28,6 @@ AttributeWidget::AttributeWidget(QModelIndex index, const QString &label,const Q
         valueWidget = 0;
     }
 
-    this->setLayout(layout);
-
     this->attributeIndex = attributeIndex;
     this->attributeTagIndex = attributeTagIndex;
 }
@@ -82,10 +80,10 @@ XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
     init(); //initialising members (defined in header)
 
     //left side
-        QWidget * leftVB = new QWidget(this); //right-side-description/edit-widget
+        QWidget * leftVB = new QWidget; //right-side-description/edit-widget
         QVBoxLayout * leftVL = new QVBoxLayout(leftVB); //->vertical layouted
 
-        QHBoxLayout * searchHB = new QHBoxLayout(leftVB);
+        QHBoxLayout * searchHB = new QHBoxLayout();
         QLineEdit * searchInput = new QLineEdit(leftVB);//fast search bar
         QPushButton * searchButton= new QPushButton(QIcon(":/xmleditor/icons/search"),"",leftVB);
 
@@ -95,7 +93,6 @@ XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
         leftVL->addWidget(tree); //top
         leftVL->addLayout(searchHB); //bottom
 
-        leftVB->setLayout(leftVL);
 
         //search bar connections
         QObject::connect(searchInput,SIGNAL(textChanged(QString)),this,SLOT(fastSearch(QString))); //initiate new search -> store in resultList
@@ -111,9 +108,9 @@ XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
     //left side
 
     //right side
-        QWidget * rightVB = new QWidget(this); //right-side-description/edit-widget
+        QWidget * rightVB = new QWidget(); //right-side-description/edit-widget
         QVBoxLayout * rightVL = new QVBoxLayout(rightVB); //->vertical layouted
-        QHBoxLayout * titleHL = new QHBoxLayout(rightVB);
+        QHBoxLayout * titleHL = new QHBoxLayout();
 
         QLabel * optionName = new QLabel(rightVB); //view for selected item name
         QFont font(optionName->font().family(),12);//set font size 12
@@ -122,7 +119,7 @@ XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
 
         QPlainTextEdit * optionDescription = new QPlainTextEdit(rightVB); //view for selected item description
         optionDescription->setReadOnly(true); //for now description does need to be changed (no associated functionality implemented)
-        attrBox = new QGridLayout(rightVB); //layout to dynamically view attributes
+        attrBox = new QGridLayout(); //layout to dynamically view attributes
 
         backwardButton = new QPushButton(QIcon(":/xmleditor/icons/back"),"",rightVB);
         backwardButton->setToolTip(tr("backwards selection"));
@@ -163,7 +160,6 @@ XMLSettingsEditor::XMLSettingsEditor(QWidget *parent) : QSplitter(parent)
         rightVL->addLayout(attrBox,3);//middle attributes
         rightVL->setAlignment(attrBox,Qt::AlignTop);
 
-        rightVB->setLayout(rightVL);
     //right side
 
     this->addWidget(leftVB);
